@@ -1,0 +1,67 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Règle pour la collection 'users'
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth.uid == userId || isAdmin();
+    }
+
+    // Règle pour la collection 'tasks'
+    match /tasks/{taskId} {
+      allow read: if request.auth != null;
+      allow create: if isAdmin() || isManager();
+      allow update: if isAdmin() || isManager() || isTaskOwner();
+      allow delete: if isAdmin();
+    }
+
+    // Règle pour la collection 'leaves'
+    match /leaves/{leaveId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if isAdmin() || isManager() || isLeaveOwner();
+      allow delete: if isAdmin() || isLeaveOwner();
+    }
+
+    // Règle pour la collection 'employees'
+    match /employees/{employeeId} {
+      allow read: if request.auth != null;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Règle pour la collection 'performance'
+    match /performance/{recordId} {
+      allow read: if isAdmin() || isManager();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Règle pour la collection 'reports'
+    match /reports/{reportId} {
+      allow read: if isAdmin() || isManager();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Fonctions utilitaires
+    function isAdmin() {
+      return request.auth.token.role == 'admin';
+    }
+
+    function isManager() {
+      return request.auth.token.role == 'manager';
+    }
+
+    function isEmployee() {
+      return request.auth.token.role == 'employee';
+    }
+
+    function isTaskOwner() {
+      return request.auth.uid == resource.data.assignedTo;
+    }
+
+    function isLeaveOwner() {
+      return request.auth.uid == resource.data.userId;
+    }
+  }
+}

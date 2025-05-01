@@ -1,0 +1,72 @@
+AttendanceScreen.tsx
+Remplacer TextInput par des dropdowns/selecteurs
+Ajouter modification des entrées existantes
+Implémenter la persistance des données
+Internationaliser les textes
+Améliorer l/UI/UX
+
+LoginScreen.tsx
+Ajouter validation côté serveur
+Implémenter "Se souvenir de moi"
+Ajouter connexion sociale (Google, etc.)
+Masquer le clavier après soumission
+Externaliser les styles
+
+SignupScreen.tsx
+Ajouter plus de champs utilisateur
+Vérifier force du mot de passe
+Masquer le clavier après soumission
+Externaliser les styles partagés
+Ajouter politique de confidentialité
+
+ForgotPasswordScreen.tsx
+Ajouter délai avant nouvelle tentative
+Masquer le clavier après soumission
+Internationaliser les messages
+Ajouter indicateur visuel pendant l/envoi
+Externaliser les styles Auth
+
+CreateResponsibleScreen.tsx
+Utiliser Formik pour le formulaire
+Ajouter plus de champs (nom, prénom)
+Internationaliser les messages
+Masquer le clavier après soumission
+Ajouter indicateur de chargement
+
+DashboardScreen.tsx
+Ajouter filtres pour tâches/congés
+Implémenter génération de rapports
+Ajouter indicateur de chargement
+Optimiser avec useCallback
+Externaliser les styles
+
+Écrans de Gestion (Management Screens)
+LeaveManagementScreen/OvertimeManagementScreen/TaskManagementScreen:
+Standardiser l'utilisation de Redux
+Ajouter des filtres avancés
+Implémenter des actions batch
+Exporter les données en CSV/Excel
+
+Tableaux de Bord
+ManagerDashboardScreen/HomeScreen:
+Ajouter des widgets personnalisables
+Implémenter des graphiques de performance
+Synchronisation temps réel
+
+Fonctionnalités Spécialisées
+QRScannerScreen/FaceRecognitionScreen:
+Optimiser le traitement d'images
+Ajouter des logs d'activité
+Gestion des permissions caméra
+
+Services Employés
+PayrollScreen/BenefitsScreen:
+Sécuriser les données sensibles
+Ajouter historique des transactions
+Intégrer des calculs automatiques
+
+UI/UX Globale
+LoadingScreen/ErrorScreen:
+Créer des composants animés
+Standardiser les messages
+Ajouter des boutons d'action contextuels

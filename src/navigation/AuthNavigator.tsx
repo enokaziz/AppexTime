@@ -9,7 +9,7 @@ import LoadingScreen from '../screens/LoadingScreen';
 
 const Stack = createStackNavigator();
 
-export function AuthNavigator() {
+const AuthNavigator = () => {
   const { isLoading } = useAuth();
 
   if (isLoading) return <LoadingScreen />;
@@ -22,4 +22,6 @@ export function AuthNavigator() {
       <Stack.Screen name="CreateResponsible" component={CreateResponsibleScreen} />
     </Stack.Navigator>
   );
-}
+};
+
+export default AuthNavigator;

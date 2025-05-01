@@ -1,120 +1,180 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, FlatList, StyleSheet, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  Button,
+  FlatList,
+  Alert,
+  Modal,
+  TouchableOpacity,
+  TextInput,
+} from 'react-native';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { addAbsence, removeAbsence } from '../store/slices/absenceSlice';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { absenceStyles } from '../styles/absenceStyles';
 
 interface Absence {
-  startDate: string;
-  endDate: string;
+  id: string;
+  startDate: Date;
+  endDate: Date;
   reason: string;
-  status: string; // Ajout du statut
+  status: string;
 }
 
 const AbsenceManagementScreen = () => {
-  const [absence, setAbsence] = useState<Absence>({ startDate: '', endDate: '', reason: '', status: 'en attente' });
-  const [absencesList, setAbsencesList] = useState<Absence[]>([]);
-  const [error, setError] = useState<string>('');
-  const [successMessage, setSuccessMessage] = useState<string>('');
+  const [showStartDatePicker, setShowStartDatePicker] = useState(false);
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [absence, setAbsence] = useState<Omit<Absence, 'id'>>({
+    startDate: new Date(),
+    endDate: new Date(),
+    reason: '',
+    status: 'en attente',
+  });
 
-  const handleInputChange = (name: keyof Absence, value: string) => {
-    setAbsence({ ...absence, [name]: value });
+  const dispatch = useAppDispatch();
+  const absencesList = useAppSelector((state) => state.absence.list);
+
+  const handleDateChange = (name: 'startDate' | 'endDate', date: Date) => {
+    setAbsence({ ...absence, [name]: date });
+    if (name === 'startDate') setShowStartDatePicker(false);
+    else setShowEndDatePicker(false);
   };
 
   const handleSubmit = () => {
-    if (!absence.startDate || !absence.endDate || !absence.reason) {
-      setError('Tous les champs doivent être remplis.');
+    if (!absence.reason) {
+      Alert.alert('Erreur', 'Le motif doit être rempli');
       return;
     }
 
-    // Validation des dates
-    if (new Date(absence.startDate) >= new Date(absence.endDate)) {
-      setError('La date de début doit être antérieure à la date de fin.');
+    if (absence.startDate >= absence.endDate) {
+      Alert.alert(
+        'Erreur',
+        'La date de début doit être antérieure à la date de fin',
+      );
       return;
     }
 
-    setAbsencesList([...absencesList, { ...absence, status: 'en attente' }]);
-    setAbsence({ startDate: '', endDate: '', reason: '', status: 'en attente' }); // Reset form
-    setError('');
-    setSuccessMessage('Absence ajoutée avec succès.');
+    setShowConfirmation(true);
   };
 
-const handleDeleteAbsence = (index: number) => {
+  const confirmSubmit = () => {
+    const newAbsence = {
+      ...absence,
+      id: Date.now().toString(),
+    };
+    dispatch(addAbsence(newAbsence));
+    setAbsence({
+      startDate: new Date(),
+      endDate: new Date(),
+      reason: '',
+      status: 'en attente',
+    });
+    setShowConfirmation(false);
+  };
+
+  const handleDeleteAbsence = (id: string) => {
     Alert.alert(
-      "Confirmation",
-      "Êtes-vous sûr de vouloir supprimer cette absence ?",
+      'Confirmation',
+      'Êtes-vous sûr de vouloir supprimer cette absence ?',
       [
-        { text: "Annuler", style: "cancel" },
-        { text: "Supprimer", onPress: () => {
-            const newAbsencesList = absencesList.filter((_, i) => i !== index);
-            setAbsencesList(newAbsencesList);
-            setSuccessMessage('Absence supprimée avec succès.');
-        }},
-      ]
+        { text: 'Annuler', style: 'cancel' },
+        { text: 'Supprimer', onPress: () => dispatch(removeAbsence(id)) },
+      ],
     );
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Gestion des Absences</Text>
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
-      {successMessage ? <Text style={styles.successText}>{successMessage}</Text> : null}
-      <TextInput
-        placeholder="Date de début"
-        value={absence.startDate}
-        onChangeText={(value) => handleInputChange('startDate', value)}
-        style={styles.input}
-      />
-      <TextInput
-        placeholder="Date de fin"
-        value={absence.endDate}
-        onChangeText={(value) => handleInputChange('endDate', value)}
-        style={styles.input}
-      />
+    <View style={absenceStyles.container}>
+      <Text style={absenceStyles.title}>Gestion des Absences</Text>
+
+      <TouchableOpacity
+        onPress={() => setShowStartDatePicker(true)}
+        style={absenceStyles.input}
+      >
+        <Text>Date de début: {absence.startDate.toLocaleDateString()}</Text>
+      </TouchableOpacity>
+
+      {showStartDatePicker && (
+        <DateTimePicker
+          value={absence.startDate}
+          mode="date"
+          onChange={(_, date) => date && handleDateChange('startDate', date)}
+        />
+      )}
+
+      <TouchableOpacity
+        onPress={() => setShowEndDatePicker(true)}
+        style={absenceStyles.input}
+      >
+        <Text>Date de fin: {absence.endDate.toLocaleDateString()}</Text>
+      </TouchableOpacity>
+
+      {showEndDatePicker && (
+        <DateTimePicker
+          value={absence.endDate}
+          mode="date"
+          onChange={(_, date) => date && handleDateChange('endDate', date)}
+        />
+      )}
+
       <TextInput
         placeholder="Motif de l'absence"
         value={absence.reason}
-        onChangeText={(value) => handleInputChange('reason', value)}
-        style={styles.input}
+        onChangeText={(value) => setAbsence({ ...absence, reason: value })}
+        style={absenceStyles.input}
       />
+
       <Button title="Soumettre" onPress={handleSubmit} />
-      
+
+      <Modal visible={showConfirmation} transparent={true}>
+        <View
+          style={{
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: 'rgba(0,0,0,0.5)',
+          }}
+        >
+          <View
+            style={{ backgroundColor: 'white', padding: 20, borderRadius: 10 }}
+          >
+            <Text>Confirmer l'ajout de cette absence ?</Text>
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-around',
+                marginTop: 20,
+              }}
+            >
+              <Button
+                title="Annuler"
+                onPress={() => setShowConfirmation(false)}
+              />
+              <Button title="Confirmer" onPress={confirmSubmit} />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       <FlatList
         data={absencesList}
-keyExtractor={(item) => item.startDate + item.endDate} // Utilisation d'un identifiant unique
-        renderItem={({ item, index }) => (
-          <View style={styles.absenceItem}>
-            <Text>{`Du ${item.startDate} au ${item.endDate}: ${item.reason} (Statut: ${item.status})`}</Text>
-            <Button title="Supprimer" onPress={() => handleDeleteAbsence(index)} />
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View style={absenceStyles.absenceItem}>
+            <Text>{`Du ${item.startDate.toLocaleDateString()} au ${item.endDate.toLocaleDateString()}: ${
+              item.reason
+            } (Statut: ${item.status})`}</Text>
+            <Button
+              title="Supprimer"
+              onPress={() => handleDeleteAbsence(item.id)}
+            />
           </View>
         )}
       />
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-  },
-  title: {
-    fontSize: 24,
-    marginBottom: 20,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 10,
-    marginBottom: 10,
-  },
-  absenceItem: {
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-  },
-  errorText: {
-    color: 'red',
-  },
-  successText: {
-    color: 'green',
-  },
-});
 
 export default AbsenceManagementScreen;

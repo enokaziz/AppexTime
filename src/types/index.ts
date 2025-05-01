@@ -20,15 +20,29 @@ export interface EmployeeHistory {
 }
 
 export interface Leave {
-  employeeName: any;
-  employeeId: ReactNode;
   id: string;
+  employeeId: string;
+  employeeName: string;
   startDate: string;
   endDate: string;
   reason: string;
+  status: LeaveStatus;
 }
 
+export type LeaveStatus = 'pending' | 'approved' | 'rejected';
 
+export interface Task {
+  id: string;
+  title: string;
+  description: string;
+  assignedTo: string;
+  employeeName: string;
+  employeeId: string;
+  status: TaskStatus;
+  dueDate: string;
+}
+
+export type TaskStatus = 'pending' | 'in_progress' | 'completed';
 
 export interface CompanySetting {
   id: string;
@@ -51,21 +65,6 @@ export interface Notification {
   message: string;
   date: string;
 }
-
-// Task types
-export interface Task {
-  id: string;
-  title: string;
-  description: string;
-  assignedTo: string;
-  status: TaskStatus;
-  dueDate: string;
-  completed: boolean; // Ajout de la propriété completed
-  employeeName: string; // Ajout de la propriété employeeName
-  employeeId: string; // Ajout de la propriété employeeId
-}
-
-export type TaskStatus = 'pending' | 'in-progress' | 'completed';
 
 // Report types
 export interface Report {

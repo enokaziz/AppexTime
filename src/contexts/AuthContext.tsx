@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, createRef } from 'react';
 import { auth, db } from '../config/firebase';
 import { User } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import { NavigationContainerRef, ParamListBase } from '@react-navigation/native';
 
 interface UserData {
   role?: string;
@@ -33,6 +34,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const navigationRef = createRef<NavigationContainerRef<ParamListBase>>();
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -43,6 +45,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const userData = userDoc.data() as UserData;
           console.log('Rôle récupéré depuis Firestore :', userData.role);
           setRole(userData.role || null);
+          
+          // Navigation conditionnelle basée sur le rôle
+          if (userData.role === 'admin') {
+            navigationRef.current?.navigate('AdminDashboard');
+          } else if (userData.role === 'Responsable') {
+            navigationRef.current?.navigate('ManagerDashboard');
+          } else {
+            navigationRef.current?.navigate('Dashboard');
+          }
         } else {
           console.error('User document does not exist for user:', user.uid);
           setRole(null);

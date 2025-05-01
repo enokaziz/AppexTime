@@ -4,9 +4,16 @@ import { createResponsible } from '../services/auth';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { AuthStackParamList } from '../navigation/types';
 
-type CreateResponsibleScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'CreateResponsible'>;
+type CreateResponsibleScreenNavigationProp = StackNavigationProp<
+  AuthStackParamList,
+  'CreateResponsible'
+>;
 
-const CreateResponsibleScreen = ({ navigation }: { navigation: CreateResponsibleScreenNavigationProp }) => {
+const CreateResponsibleScreen = ({
+  navigation,
+}: {
+  navigation: CreateResponsibleScreenNavigationProp;
+}) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -33,7 +40,7 @@ const CreateResponsibleScreen = ({ navigation }: { navigation: CreateResponsible
     }
 
     try {
-      const success = await createResponsible(email, password);
+      const success = await createResponsible(email, password, 'responsible');
       if (success) {
         setSuccess(true);
         setError('');
@@ -69,14 +76,21 @@ const CreateResponsibleScreen = ({ navigation }: { navigation: CreateResponsible
         onChangeText={setConfirmPassword}
         secureTextEntry
       />
-      {success && <Text style={styles.successText}>Responsible created successfully.</Text>}
+      {success && (
+        <Text style={styles.successText}>
+          Responsible created successfully.
+        </Text>
+      )}
       {error && <Text style={styles.errorText}>{error}</Text>}
-      <Button 
-        title="Create Responsible" 
-        onPress={handleCreateResponsible} 
-        accessibilityLabel="Créer un responsable" 
+      <Button
+        title="Create Responsible"
+        onPress={handleCreateResponsible}
+        accessibilityLabel="Créer un responsable"
       />
-      <Button title="Back to Admin Dashboard" onPress={() => navigation.navigate('AdminDashboard')} />
+      <Button
+        title="Back to Admin Dashboard"
+        onPress={() => navigation.navigate('AdminDashboard')}
+      />
     </View>
   );
 };
@@ -105,4 +119,3 @@ const styles = StyleSheet.create({
 });
 
 export default CreateResponsibleScreen;
-

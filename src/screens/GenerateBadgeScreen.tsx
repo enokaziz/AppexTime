@@ -19,10 +19,12 @@ const GenerateBadgeScreen = () => {
         firstName,
         phoneNumber,
         photo,
-        id: `${name.substring(0, 2).toUpperCase()}${Math.floor(100000 + Math.random() * 900000)}`,
+        id: `${name.substring(0, 2).toUpperCase()}${Math.floor(
+          100000 + Math.random() * 900000,
+        )}`,
         companyInitials: '',
         qrCodeUrl: '',
-        uniqueId: ''
+        uniqueId: '',
       };
       const badge = await generateBadge(employee);
       const qrCode = await generateQRCode(employee.id);

@@ -1,211 +1,313 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, Animated } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator,
+  Animated,
+  ScrollView,
+} from 'react-native';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
 import { RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { AuthStackParamList } from '../../navigation/types';
-import useEmployee from '../../hooks/useEmployee';
+import { globalStylesUpdated, colors } from '../../styles/globalStylesUpdated';
+import { useAppDispatch } from '../../hooks/useAppDispatch';
+import { useAppSelector } from '../../hooks/useAppSelector';
+import { updateEmployee } from '../../store/slices/employeeSlice';
+import { useToast } from '../../hooks/useToast';
+import { RootState } from '../../store/store';
+import { Employee, PhotoData } from '../../types/employee';
+import PhotoPicker from '../../components/PhotoPicker';
+import * as ImagePicker from 'expo-image-picker';
 
 type EditEmployeeScreenProps = {
   route: RouteProp<AuthStackParamList, 'EditEmployee'>;
   navigation: StackNavigationProp<AuthStackParamList, 'EditEmployee'>;
 };
 
+type FormValues = {
+  firstName: string;
+  lastName: string;
+  phone: string;
+};
+
 const editEmployeeSchema = Yup.object().shape({
-  name: Yup.string().required('Nom requis'),
-  firstName: Yup.string().required('Prénom requis'),
-  phoneNumber: Yup.string().matches(/^\d{10}$/, 'Numéro de téléphone invalide (10 chiffres requis)').required('Numéro requis'),
-  photo: Yup.string().url('URL invalide').required('Photo requise'),
-  companyInitials: Yup.string().required('Initiales requises'),
-  qrCodeUrl: Yup.string().url('URL invalide').required('URL du QR code requise'),
-  uniqueId: Yup.string().required('ID unique requis'),
+  firstName: Yup.string()
+    .min(2, 'Trop court')
+    .max(50, 'Trop long')
+    .required('Prénom requis'),
+  lastName: Yup.string()
+    .min(2, 'Trop court')
+    .max(50, 'Trop long')
+    .required('Nom requis'),
+  phone: Yup.string()
+    .matches(/^\d{10}$/, 'Numéro de téléphone invalide (10 chiffres requis)')
+    .required('Numéro requis'),
 });
 
-const EditEmployeeScreen: React.FC<EditEmployeeScreenProps> = ({ route, navigation }) => {
-  const { employeeId } = route.params as { employeeId: string };
-  const { handleGetEmployee, handleUpdateEmployee } = useEmployee();
-  const [loading, setLoading] = useState(true);
+const EditEmployeeScreen: React.FC<EditEmployeeScreenProps> = ({
+  route,
+  navigation,
+}) => {
+  const employeeId: string = route.params.employeeId || '';
+  const dispatch = useAppDispatch();
+  const toast = useToast();
+  const { employees, loading } = useAppSelector(
+    (state: RootState) => state.employee,
+  );
+  const { role } = useAppSelector((state: RootState) => state.auth);
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
   const titleOpacity = React.useRef(new Animated.Value(0)).current;
   const formTranslateY = React.useRef(new Animated.Value(50)).current;
 
-  useEffect(() => {
-    const fetchEmployee = async () => {
-      try {
-        const employee = await handleGetEmployee(employeeId);
-        if (!employee) throw new Error('Employé non trouvé');
-        Animated.parallel([
-          Animated.timing(titleOpacity, { toValue: 1, duration: 1000, useNativeDriver: true }),
-          Animated.timing(formTranslateY, { toValue: 0, duration: 800, useNativeDriver: true }),
-        ]).start();
-      } catch (error) {
-        Alert.alert('Erreur', 'Employé non trouvé.');
-        navigation.goBack();
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchEmployee();
-  }, [employeeId, handleGetEmployee, navigation]);
+  const employee = employees.find((emp: Employee) => emp.id === employeeId);
 
-  if (loading) {
-    return <ActivityIndicator size="large" color="#007AFF" style={styles.loading} />;
+  useEffect(() => {
+    if (role !== 'admin') {
+      toast.error('Vous n\'avez pas les permissions nécessaires');
+      navigation.goBack();
+      return;
+    }
+
+    if (!employee) {
+      toast.error('Employé non trouvé');
+      navigation.goBack();
+      return;
+    }
+
+    setPhotoUri(employee.photoUrl || null);
+
+    Animated.parallel([
+      Animated.timing(titleOpacity, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+      Animated.timing(formTranslateY, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [employee, navigation, role]);
+
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (status !== 'granted') {
+      toast.error("Permission d'accès à la galerie refusée");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.5,
+    });
+
+    if (!result.canceled) {
+      setPhotoUri(result.assets[0].uri);
+    }
+  };
+
+  const takePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+
+    if (status !== 'granted') {
+      toast.error("Permission d'accès à la caméra refusée");
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.5,
+    });
+
+    if (!result.canceled) {
+      setPhotoUri(result.assets[0].uri);
+    }
+  };
+
+  if (loading || !employee) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
   }
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
-      <Animated.Text style={[styles.title, { opacity: titleOpacity }]}>
-        Modifier un Employé
-      </Animated.Text>
-      <Animated.View style={[styles.formContainer, { transform: [{ translateY: formTranslateY }] }]}>
-        <Formik
-          initialValues={{
-            name: '',
-            firstName: '',
-            phoneNumber: '',
-            photo: '',
-            companyInitials: '',
-            qrCodeUrl: '',
-            uniqueId: '',
-          }}
-          validationSchema={editEmployeeSchema}
-          onSubmit={async (values, { setSubmitting }) => {
-            try {
-              await handleUpdateEmployee({ id: employeeId, ...values });
-              Alert.alert('Succès', 'Employé mis à jour avec succès !');
-              navigation.goBack();
-            } catch (error) {
-              Alert.alert('Erreur', 'Une erreur est survenue lors de la mise à jour.');
-              console.error(error);
-            } finally {
-              setSubmitting(false);
-            }
-          }}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={globalStylesUpdated.container}
+    >
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <Animated.Text
+          style={[globalStylesUpdated.title, { opacity: titleOpacity }]}
         >
-          {({ handleChange, handleBlur, handleSubmit, values, errors, touched, isSubmitting }) => (
-            <View>
-              <TextInput
-                style={[styles.input, touched.name && errors.name ? styles.inputError : null]}
-                placeholder="Nom"
-                value={values.name}
-                onChangeText={handleChange('name')}
-                onBlur={handleBlur('name')}
-              />
-              {touched.name && errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
-              <TextInput
-                style={[styles.input, touched.firstName && errors.firstName ? styles.inputError : null]}
-                placeholder="Prénom"
-                value={values.firstName}
-                onChangeText={handleChange('firstName')}
-                onBlur={handleBlur('firstName')}
-              />
-              {touched.firstName && errors.firstName && <Text style={styles.errorText}>{errors.firstName}</Text>}
-              <TextInput
-                style={[styles.input, touched.phoneNumber && errors.phoneNumber ? styles.inputError : null]}
-                placeholder="Numéro de Téléphone"
-                value={values.phoneNumber}
-                onChangeText={handleChange('phoneNumber')}
-                onBlur={handleBlur('phoneNumber')}
-                keyboardType="phone-pad"
-              />
-              {touched.phoneNumber && errors.phoneNumber && <Text style={styles.errorText}>{errors.phoneNumber}</Text>}
-              <TextInput
-                style={[styles.input, touched.photo && errors.photo ? styles.inputError : null]}
-                placeholder="Photo (URL)"
-                value={values.photo}
-                onChangeText={handleChange('photo')}
-                onBlur={handleBlur('photo')}
-              />
-              {touched.photo && errors.photo && <Text style={styles.errorText}>{errors.photo}</Text>}
-              <TextInput
-                style={[styles.input, touched.companyInitials && errors.companyInitials ? styles.inputError : null]}
-                placeholder="Initiales de l'entreprise"
-                value={values.companyInitials}
-                onChangeText={handleChange('companyInitials')}
-                onBlur={handleBlur('companyInitials')}
-              />
-              {touched.companyInitials && errors.companyInitials && <Text style={styles.errorText}>{errors.companyInitials}</Text>}
-              <TextInput
-                style={[styles.input, touched.qrCodeUrl && errors.qrCodeUrl ? styles.inputError : null]}
-                placeholder="URL du code QR"
-                value={values.qrCodeUrl}
-                onChangeText={handleChange('qrCodeUrl')}
-                onBlur={handleBlur('qrCodeUrl')}
-              />
-              {touched.qrCodeUrl && errors.qrCodeUrl && <Text style={styles.errorText}>{errors.qrCodeUrl}</Text>}
-              <TextInput
-                style={[styles.input, touched.uniqueId && errors.uniqueId ? styles.inputError : null]}
-                placeholder="ID unique"
-                value={values.uniqueId}
-                onChangeText={handleChange('uniqueId')}
-                onBlur={handleBlur('uniqueId')}
-              />
-              {touched.uniqueId && errors.uniqueId && <Text style={styles.errorText}>{errors.uniqueId}</Text>}
-              <TouchableOpacity
-                style={[styles.button, isSubmitting && styles.buttonDisabled]}
-                onPress={() => handleSubmit()}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Mettre à jour</Text>}
-              </TouchableOpacity>
-            </View>
-          )}
-        </Formik>
-      </Animated.View>
+          Modifier l'Employé
+        </Animated.Text>
+
+        <Animated.View
+          style={[
+            styles.formContainer,
+            { transform: [{ translateY: formTranslateY }] },
+          ]}
+        >
+          <Formik<FormValues>
+            initialValues={{
+              firstName: employee.firstName || '',
+              lastName: employee.lastName || '',
+              phone: employee.phone || '',
+            }}
+            validationSchema={editEmployeeSchema}
+            onSubmit={async (values, { setSubmitting }) => {
+              try {
+                if (!photoUri) {
+                  toast.error('Veuillez ajouter une photo');
+                  return;
+                }
+
+                const photoData: PhotoData | undefined =
+                  photoUri !== employee.photoUrl
+                    ? {
+                        uri: photoUri,
+                        type: 'image/jpeg',
+                        name: `${employeeId}_photo_updated.jpg`,
+                      }
+                    : undefined;
+
+                await dispatch(
+                  updateEmployee({
+                    id: employeeId,
+                    employeeData: values,
+                    photoData,
+                  }),
+                ).unwrap();
+
+                toast.success('Employé mis à jour avec succès');
+                navigation.goBack();
+              } catch (error) {
+                toast.error("Erreur lors de la mise à jour de l'employé");
+              } finally {
+                setSubmitting(false);
+              }
+            }}
+          >
+            {({
+              handleChange,
+              handleBlur,
+              handleSubmit,
+              values,
+              errors,
+              touched,
+              isSubmitting,
+            }) => (
+              <View>
+                <PhotoPicker photoUri={photoUri} setPhotoUri={setPhotoUri} />
+
+                <TextInput
+                  style={[
+                    globalStylesUpdated.input,
+                    touched.firstName && errors.firstName && styles.inputError,
+                  ]}
+                  placeholder="Prénom"
+                  value={values.firstName || ''}
+                  onChangeText={(text: string) => handleChange('firstName')(text)}
+                  onBlur={(event: any) => handleBlur('firstName')(event)}
+                />
+                {touched.firstName && errors.firstName && (
+                  <Text style={styles.errorText}>{errors.firstName}</Text>
+                )}
+
+                <TextInput
+                  style={[
+                    globalStylesUpdated.input,
+                    touched.lastName && errors.lastName && styles.inputError,
+                  ]}
+                  placeholder="Nom"
+                  value={values.lastName || ''}
+                  onChangeText={(text: string) => handleChange('lastName')(text)}
+                  onBlur={(event: any) => handleBlur('lastName')(event)}
+                />
+                {touched.lastName && errors.lastName && (
+                  <Text style={styles.errorText}>{errors.lastName}</Text>
+                )}
+
+                <TextInput
+                  style={[
+                    globalStylesUpdated.input,
+                    touched.phone && errors.phone && styles.inputError,
+                  ]}
+                  placeholder="Numéro de Téléphone"
+                  value={values.phone || ''}
+                  onChangeText={(text: string) => handleChange('phone')(text)}
+                  onBlur={(event: any) => handleBlur('phone')(event)}
+                  keyboardType="phone-pad"
+                />
+                {touched.phone && errors.phone && (
+                  <Text style={styles.errorText}>{errors.phone}</Text>
+                )}
+
+                <TouchableOpacity
+                  style={[
+                    globalStylesUpdated.button,
+                    styles.submitButton,
+                    isSubmitting && styles.buttonDisabled,
+                  ]}
+                  onPress={() => handleSubmit()}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <ActivityIndicator color={colors.white} />
+                  ) : (
+                    <Text style={globalStylesUpdated.buttonText}>
+                      Mettre à jour
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
+          </Formik>
+        </Animated.View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  loadingContainer: {
     flex: 1,
     justifyContent: 'center',
-    padding: 20,
-    backgroundColor: '#f5f5f5',
-  },
-  loading: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
-    color: '#333',
+    alignItems: 'center',
   },
   formContainer: {
     width: '100%',
-  },
-  input: {
-    height: 50,
-    borderColor: '#ddd',
-    borderWidth: 1,
-    marginBottom: 15,
-    paddingHorizontal: 15,
-    borderRadius: 5,
-    backgroundColor: '#fff',
+    paddingHorizontal: 20,
   },
   inputError: {
-    borderColor: 'red',
+    borderColor: colors.error,
   },
   errorText: {
-    color: 'red',
+    color: colors.error,
+    fontSize: 12,
     marginBottom: 10,
+    marginLeft: 5,
   },
-  button: {
-    backgroundColor: '#007AFF',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
+  submitButton: {
+    marginTop: 20,
+    marginBottom: 30,
   },
   buttonDisabled: {
-    backgroundColor: '#999',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+    opacity: 0.7,
   },
 });
 

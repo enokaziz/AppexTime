@@ -1,28 +1,85 @@
-## Exemples d'utilisation
-### Ajouter un employé
-Pour ajouter un nouvel employé, accédez à l'écran de gestion des employés et remplissez le formulaire avec les informations requises. Cliquez sur "Ajouter" pour enregistrer l'employé.
+# ApexTime - Application de Gestion des Temps et Absences
 
-### Gestion des congés
-Pour gérer les congés, allez à l'écran de gestion des congés. Sélectionnez un employé, puis choisissez le type de congé et la période. Cliquez sur "Soumettre" pour enregistrer la demande de congé.
+Application mobile de gestion des temps de travail, congés et absences pour les employés et administrateurs.
 
-## Détails des scripts
-- **Démarrer l'application sur Android** : 
-  ```sh
-  npm run android
-  ```
-  Cela lancera l'application sur un appareil Android ou un émulateur.
+## Fonctionnalités Principales
 
-- **Démarrer l'application sur iOS** : 
-  ```sh
-  npm run ios
-  ```
-  Cela lancera l'application sur un appareil iOS ou un simulateur.
+- **Gestion des temps de travail** : Suivi des heures travaillées
+- **Gestion des absences** : Demande et validation des congés
+- **Tableau de bord admin** : Statistiques et analyses
+- **Notifications** : Alertes pour les approbations
+- **Synchronisation cloud** : Sauvegarde sécurisée des données
 
-- **Démarrer l'application sur le Web** : 
-  ```sh
-  npm run web
-  ```
-  Cela lancera l'application dans un navigateur web.
+## Technologies Utilisées
 
-## Configuration avancée
-Pour certaines fonctionnalités avancées, comme l'authentification avec Firebase, assurez-vous que les clés API et les configurations sont correctement définies dans `src/config/firebase.ts`.
+- **Framework** : React Native + Expo
+- **Navigation** : React Navigation
+- **State Management** : Redux Toolkit
+- **Base de données** : Firebase (Firestore)
+- **UI** : React Native Paper + SVG
+- **Formulaires** : Formik + Yup
+
+## Configuration Requise
+
+- Node.js v18+
+- Expo CLI
+- Android Studio / Xcode (pour le développement natif)
+
+## Installation
+
+```bash
+# Cloner le dépôt
+git clone https://github.com/votre-repo/apextime.git
+
+# Installer les dépendances
+cd apextime
+npm install
+
+# Configurer Firebase
+Créer un fichier .env à la racine avec vos clés Firebase
+```
+
+## Lancer l'Application
+
+```bash
+# Développement
+npm start
+
+# Android
+npm run android
+
+# iOS
+npm run ios
+
+# Web
+npm run web
+```
+
+## Structure du Projet
+
+```
+src/
+├── components/    # Composants réutilisables
+├── config/        # Configuration
+├── contexts/      # Contextes React
+├── hooks/         # Hooks personnalisés
+├── navigation/    # Configuration de navigation
+├── screens/       # Écrans de l'application
+├── services/      # Services API
+├── store/         # Configuration Redux
+├── styles/        # Styles globaux
+├── types/         # Définitions TypeScript
+└── utils/         # Utilitaires
+```
+
+## Captures d'Écran
+
+(À ajouter)
+
+## Contribution
+
+Voir [CONTRIBUTING.md](CONTRIBUTING.md) pour les guidelines de contribution.
+
+## Licence
+
+Ce projet est sous licence MIT - voir [LICENSE](LICENSE) pour plus de détails.

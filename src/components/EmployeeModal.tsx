@@ -1,15 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, View, Text, TextInput, Button, StyleSheet } from 'react-native';
 import useEmployee from '@hooks/useEmployee';
-
-interface Employee {
-  id: string;
-  name: string;
-  firstName: string;
-  phoneNumber: string;
-  photo: string;
-  companyInitials: string;
-}
+import { Employee } from '../types/index';
 
 interface EmployeeModalProps {
   visible: boolean;
@@ -17,13 +9,18 @@ interface EmployeeModalProps {
   employeeId?: string;
 }
 
-const EmployeeModal: React.FC<EmployeeModalProps> = ({ visible, onClose, employeeId }) => {
+const EmployeeModal: React.FC<EmployeeModalProps> = ({
+  visible,
+  onClose,
+  employeeId,
+}) => {
   const [name, setName] = useState('');
   const [firstName, setFirstName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [photo, setPhoto] = useState('');
   const [companyInitials, setCompanyInitials] = useState('');
-  const { handleAddEmployee, handleUpdateEmployee, handleGetEmployee } = useEmployee();
+  const { handleAddEmployee, handleUpdateEmployee, handleGetEmployee } =
+    useEmployee();
 
   useEffect(() => {
     if (employeeId) {
@@ -41,9 +38,26 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({ visible, onClose, employe
 
   const handleSave = async () => {
     if (employeeId) {
-      await handleUpdateEmployee({ id: employeeId, name, firstName, phoneNumber, photo, companyInitials });
+      await handleUpdateEmployee({
+        id: employeeId,
+        name,
+        firstName,
+        phoneNumber,
+        photo,
+        companyInitials,
+        qrCodeUrl: '', 
+        uniqueId: `EMP-${Date.now()}` 
+      });
     } else {
-      await handleAddEmployee(name, firstName, phoneNumber, photo, companyInitials);
+      await handleAddEmployee(
+        name,
+        firstName,
+        phoneNumber,
+        photo,
+        companyInitials,
+        '', 
+        `EMP-${Date.now()}` 
+      );
     }
     onClose();
   };

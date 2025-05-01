@@ -1,19 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Alert, Animated } from 'react-native';
-import useEmployee from '../../hooks/useEmployee';
-import { Employee } from '../../types/index';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { AuthStackParamList } from '../../navigation/types';
 import debounce from 'lodash/debounce';
+import { globalStylesUpdated, colors } from '../../styles/globalStylesUpdated';
+import { useAppDispatch } from '../../hooks/useAppDispatch';
+import { useAppSelector } from '../../hooks/useAppSelector';
+import { fetchEmployees, deleteEmployee } from '../../store/slices/employeeSlice';
+import { ActivityIndicator } from 'react-native';
+import { showToast } from '../../store/slices/uiSlice';
 
 type EmployeeListScreenProps = {
   navigation: StackNavigationProp<AuthStackParamList, 'EmployeeList'>;
 };
 
+type Employee = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  employeeId: string;
+  phone: string;
+};
+
 const EmployeeListScreen: React.FC<EmployeeListScreenProps> = ({ navigation }) => {
-  const { employees, handleDeleteEmployee } = useEmployee();
+  const dispatch = useAppDispatch();
+  const { employees, loading, error } = useAppSelector((state) => state.employee);
+  const { user } = useAppSelector((state) => state.auth);
   const [searchQuery, setSearchQuery] = useState('');
   const listOpacity = React.useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (user?.companyId) {
+      dispatch(fetchEmployees(user.companyId));
+    }
+  }, [dispatch, user?.companyId]);
 
   useEffect(() => {
     Animated.timing(listOpacity, {
@@ -24,8 +44,9 @@ const EmployeeListScreen: React.FC<EmployeeListScreenProps> = ({ navigation }) =
   }, []);
 
   const filteredEmployees = employees.filter(employee =>
-    employee.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    employee.firstName.toLowerCase().includes(searchQuery.toLowerCase())
+    employee.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    employee.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    employee.employeeId.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleEditEmployee = (employeeId: string) => {
@@ -42,9 +63,16 @@ const EmployeeListScreen: React.FC<EmployeeListScreenProps> = ({ navigation }) =
           text: 'Supprimer',
           onPress: async () => {
             try {
-              await handleDeleteEmployee(employeeId);
+              await dispatch(deleteEmployee(employeeId)).unwrap();
+              dispatch(showToast({
+                message: 'Employé supprimé avec succès',
+                type: 'success'
+              }));
             } catch (error) {
-              Alert.alert('Erreur', 'Échec de la suppression de l\'employé.');
+              dispatch(showToast({
+                message: 'Erreur lors de la suppression de l\'employé',
+                type: 'error'
+              }));
             }
           },
         },
@@ -54,118 +82,144 @@ const EmployeeListScreen: React.FC<EmployeeListScreenProps> = ({ navigation }) =
   };
 
   const renderItem = ({ item }: { item: Employee }) => (
-    <View style={styles.item}>
-      <Text style={styles.name}>{`${item.firstName} ${item.name}`}</Text>
-      <Text style={styles.phone}>{item.phoneNumber}</Text>
+    <Animated.View style={[globalStylesUpdated.card, { opacity: listOpacity }]}>
+      <View style={styles.employeeInfo}>
+        <Text style={globalStylesUpdated.text}>{`${item.firstName} ${item.lastName}`}</Text>
+        <Text style={[globalStylesUpdated.text, styles.employeeId]}>ID: {item.employeeId}</Text>
+        <Text style={globalStylesUpdated.text}>{item.phone}</Text>
+      </View>
       <View style={styles.actions}>
-        <TouchableOpacity onPress={() => handleEditEmployee(item.id)} style={styles.actionButton}>
+        <TouchableOpacity 
+          onPress={() => handleEditEmployee(item.id)} 
+          style={[globalStylesUpdated.actionButton, styles.editButton]}
+        >
           <Text style={styles.actionText}>Éditer</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleDeleteEmployeeById(item.id)} style={[styles.actionButton, styles.deleteButton]}>
+        <TouchableOpacity 
+          onPress={() => handleDeleteEmployeeById(item.id)} 
+          style={[globalStylesUpdated.actionButton, styles.deleteButton]}
+        >
           <Text style={styles.actionText}>Supprimer</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </Animated.View>
   );
 
   const debouncedSearch = debounce((text: string) => setSearchQuery(text), 300);
 
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity 
+          style={globalStylesUpdated.button}
+          onPress={() => user?.companyId && dispatch(fetchEmployees(user.companyId))}
+        >
+          <Text style={globalStylesUpdated.buttonText}>Réessayer</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Liste des Employés</Text>
-      <TextInput
-        placeholder="Rechercher un employé"
-        onChangeText={debouncedSearch}
-        style={styles.input}
-      />
+    <View style={globalStylesUpdated.container}>
+      <Text style={globalStylesUpdated.title}>Liste des Employés</Text>
+      
+      <View style={styles.searchContainer}>
+        <TextInput
+          placeholder="Rechercher un employé"
+          onChangeText={debouncedSearch}
+          style={styles.searchInput}
+          placeholderTextColor={colors.border}
+        />
+      </View>
+
       <TouchableOpacity
-        style={styles.addButton}
+        style={[globalStylesUpdated.button, styles.addButton]}
         onPress={() => navigation.navigate('AddEmployee')}
       >
-        <Text style={styles.buttonText}>Ajouter un Employé</Text>
+        <Text style={globalStylesUpdated.buttonText}>Ajouter un Employé</Text>
       </TouchableOpacity>
-      <Animated.FlatList
-        style={{ opacity: listOpacity }}
+
+      <FlatList
         data={filteredEmployees}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
+        contentContainerStyle={styles.listContainer}
+        showsVerticalScrollIndicator={false}
       />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  loadingContainer: {
     flex: 1,
-    padding: 16,
-    backgroundColor: '#f5f5f5',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    color: colors.error,
+    fontSize: 16,
     marginBottom: 20,
     textAlign: 'center',
-    color: '#333',
   },
-  input: {
+  searchContainer: {
+    marginBottom: 15,
+  },
+  searchInput: {
     height: 50,
-    borderColor: '#ddd',
+    borderColor: colors.border,
     borderWidth: 1,
-    marginBottom: 15,
     paddingHorizontal: 15,
-    borderRadius: 5,
-    backgroundColor: '#fff',
-  },
-  addButton: {
-    backgroundColor: '#007AFF',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  item: {
-    padding: 16,
     borderRadius: 8,
-    backgroundColor: '#fff',
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: colors.background,
+    color: colors.text,
   },
-  name: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#333',
+  listContainer: {
+    paddingBottom: 20,
   },
-  phone: {
-    fontSize: 16,
-    color: '#555',
+  employeeInfo: {
+    flex: 1,
+  },
+  employeeId: {
+    color: colors.secondary,
+    fontSize: 14,
+    marginVertical: 4,
   },
   actions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    marginTop: 8,
+    marginTop: 10,
   },
-  actionButton: {
-    padding: 8,
-    borderRadius: 4,
-    backgroundColor: '#007AFF',
-    marginHorizontal: 5,
+  editButton: {
+    backgroundColor: colors.primary,
+    marginRight: 10,
   },
   deleteButton: {
-    backgroundColor: '#FF3B30',
+    backgroundColor: colors.error,
   },
   actionText: {
-    color: '#fff',
+    color: colors.white,
     fontWeight: 'bold',
+    fontSize: 14,
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+  addButton: {
+    marginBottom: 15,
   },
 });
 
