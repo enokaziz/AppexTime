@@ -1,16 +1,31 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@contexts/AuthContext';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  Alert,
+} from 'react-native';
 import useEmployee from '@hooks/useEmployee';
 import useLeave from '@hooks/useLeave';
 import useTasks from '@hooks/useTasks';
 import usePerformance from '@hooks/usePerformance';
-import { logNotification, onLeaveStatusChange } from '@utils/notificationHelper';
-import { Employee, Leave, Task } from '../types/index';
+import {
+  logNotification,
+  onLeaveStatusChange,
+} from '@utils/notificationHelper';
+import { Employee, Leave, Task, TaskStatus } from '../types/index';
 
 const ManagerDashboardScreen: React.FC = () => {
   const { user, role } = useAuth();
-  const { employees, handleAddEmployee, handleUpdateEmployee, handleDeleteEmployee } = useEmployee();
+  const {
+    employees,
+    handleAddEmployee,
+    handleUpdateEmployee,
+    handleDeleteEmployee,
+  } = useEmployee();
   const { leaves, approveLeave, rejectLeave } = useLeave();
   const { tasks, assignTask, completeTask } = useTasks();
   const { evaluatePerformance } = usePerformance();
@@ -19,14 +34,17 @@ const ManagerDashboardScreen: React.FC = () => {
 
   useEffect(() => {
     if (role !== 'manager' && role !== 'admin') {
-      Alert.alert("Accès refusé", "Vous n'avez pas les autorisations nécessaires pour accéder à ce tableau de bord.");
+      Alert.alert(
+        'Accès refusé',
+        "Vous n'avez pas les autorisations nécessaires pour accéder à ce tableau de bord.",
+      );
       setIsAuthorized(false);
     } else {
       setIsAuthorized(true);
     }
 
     const unsubscribe = onLeaveStatusChange((status: string) => {
-      Alert.alert("Notification", `Le congé a été ${status}.`);
+      Alert.alert('Notification', `Le congé a été ${status}.`);
     });
 
     return () => unsubscribe();
@@ -34,7 +52,10 @@ const ManagerDashboardScreen: React.FC = () => {
 
   const handleApproveLeave = (id: string) => {
     if (!user || !role) {
-      Alert.alert("Erreur", "Vous devez être connecté pour approuver un congé.");
+      Alert.alert(
+        'Erreur',
+        'Vous devez être connecté pour approuver un congé.',
+      );
       return;
     }
     approveLeave(id);
@@ -42,22 +63,28 @@ const ManagerDashboardScreen: React.FC = () => {
 
   const handleRejectLeave = (id: string) => {
     if (!user || !role) {
-      Alert.alert("Erreur", "Vous devez être connecté pour refuser un congé.");
+      Alert.alert('Erreur', 'Vous devez être connecté pour refuser un congé.');
       return;
     }
     rejectLeave(id);
   };
 
-  const handleAssignTask = (status: 'pending' | 'in-progress' | 'completed') => {
+  const handleAssignTask = (
+    title: string,
+    description: string,
+    employeeId: string,
+    employeeName: string,
+    status: TaskStatus,
+  ) => {
     const newTask: Task = {
       id: Math.random().toString(36).substr(2, 9),
-      title: 'New Task',
-      description: 'Description de la nouvelle tâche',
+      title,
+      description,
+      employeeName,
+      employeeId,
+      assignedTo: employeeName,
+      status,
       completed: false,
-      employeeName: 'Nom de l\'employé',
-      employeeId: '1',
-      assignedTo: 'New Employee',
-      status: status, // Utilisation du paramètre status
       dueDate: new Date().toISOString(),
     };
     assignTask(newTask);

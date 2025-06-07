@@ -6,6 +6,10 @@ declare module 'react-native-qrcode-svg' {
     size: number;
     color: string;
     backgroundColor: string;
+    logo?: string;
+    logoSize?: number;
+    quietZone?: number;
+    quietZoneColor?: string;
   }
 
   export default class QRCode extends React.Component<QRCodeProps> {

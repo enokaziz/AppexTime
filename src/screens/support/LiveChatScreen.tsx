@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import LiveChat from '../components/LiveChat';
+import LiveChat from '../../components/LiveChat';
 
 const LiveChatScreen: React.FC = () => {
   const handleSendMessage = (message: string) => {

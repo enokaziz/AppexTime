@@ -1,12 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Alert, Animated } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  TextInput,
+  Alert,
+  Animated,
+} from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { AuthStackParamList } from '../../navigation/types';
 import debounce from 'lodash/debounce';
 import { globalStylesUpdated, colors } from '../../styles/globalStylesUpdated';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
-import { fetchEmployees, deleteEmployee } from '../../store/slices/employeeSlice';
+import {
+  fetchEmployees,
+  deleteEmployee,
+} from '../../store/slices/employeeSlice';
 import { ActivityIndicator } from 'react-native';
 import { showToast } from '../../store/slices/uiSlice';
 
@@ -22,16 +34,26 @@ type Employee = {
   phone: string;
 };
 
-const EmployeeListScreen: React.FC<EmployeeListScreenProps> = ({ navigation }) => {
+const EmployeeListScreen: React.FC<EmployeeListScreenProps> = ({
+  navigation,
+}) => {
   const dispatch = useAppDispatch();
-  const { employees, loading, error } = useAppSelector((state) => state.employee);
+  const { employees, loading, error } = useAppSelector(
+    (state) => state.employee,
+  );
   const { user } = useAppSelector((state) => state.auth);
   const [searchQuery, setSearchQuery] = useState('');
   const listOpacity = React.useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (user?.companyId) {
-      dispatch(fetchEmployees(user.companyId));
+      dispatch(
+        fetchEmployees({
+          page: 1,
+          pageSize: 10,
+          companyId: user.companyId,
+        }),
+      );
     }
   }, [dispatch, user?.companyId]);
 
@@ -43,17 +65,20 @@ const EmployeeListScreen: React.FC<EmployeeListScreenProps> = ({ navigation }) =
     }).start();
   }, []);
 
-  const filteredEmployees = employees.filter(employee =>
-    employee.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    employee.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    employee.employeeId.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredEmployees = employees.filter(
+    (employee) =>
+      employee.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      employee.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      employee.employeeId.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const handleEditEmployee = (employeeId: string) => {
     navigation.navigate('EditEmployee', { employeeId });
   };
 
-  const handleDeleteEmployeeById = async (employeeId: string): Promise<void> => {
+  const handleDeleteEmployeeById = async (
+    employeeId: string,
+  ): Promise<void> => {
     Alert.alert(
       'Confirmation',
       'Êtes-vous sûr de vouloir supprimer cet employé ?',
@@ -64,39 +89,47 @@ const EmployeeListScreen: React.FC<EmployeeListScreenProps> = ({ navigation }) =
           onPress: async () => {
             try {
               await dispatch(deleteEmployee(employeeId)).unwrap();
-              dispatch(showToast({
-                message: 'Employé supprimé avec succès',
-                type: 'success'
-              }));
+              dispatch(
+                showToast({
+                  message: 'Employé supprimé avec succès',
+                  type: 'success',
+                }),
+              );
             } catch (error) {
-              dispatch(showToast({
-                message: 'Erreur lors de la suppression de l\'employé',
-                type: 'error'
-              }));
+              dispatch(
+                showToast({
+                  message: "Erreur lors de la suppression de l'employé",
+                  type: 'error',
+                }),
+              );
             }
           },
         },
       ],
-      { cancelable: false }
+      { cancelable: false },
     );
   };
 
   const renderItem = ({ item }: { item: Employee }) => (
     <Animated.View style={[globalStylesUpdated.card, { opacity: listOpacity }]}>
       <View style={styles.employeeInfo}>
-        <Text style={globalStylesUpdated.text}>{`${item.firstName} ${item.lastName}`}</Text>
-        <Text style={[globalStylesUpdated.text, styles.employeeId]}>ID: {item.employeeId}</Text>
+        <Text
+          style={globalStylesUpdated.text}
+        >{`${item.firstName} ${item.lastName}`}</Text>
+        <Text style={[globalStylesUpdated.text, styles.employeeId]}>
+          ID: {item.employeeId}
+        </Text>
         <Text style={globalStylesUpdated.text}>{item.phone}</Text>
       </View>
       <View style={styles.actions}>
-        <TouchableOpacity 
-          onPress={() => handleEditEmployee(item.id)} 
+        <TouchableOpacity
+          onPress={() => handleEditEmployee(item.id)}
           style={[globalStylesUpdated.actionButton, styles.editButton]}
         >
           <Text style={styles.actionText}>Éditer</Text>
         </TouchableOpacity>
-        <TouchableOpacity 
-          onPress={() => handleDeleteEmployeeById(item.id)} 
+        <TouchableOpacity
+          onPress={() => handleDeleteEmployeeById(item.id)}
           style={[globalStylesUpdated.actionButton, styles.deleteButton]}
         >
           <Text style={styles.actionText}>Supprimer</Text>
@@ -119,9 +152,18 @@ const EmployeeListScreen: React.FC<EmployeeListScreenProps> = ({ navigation }) =
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={globalStylesUpdated.button}
-          onPress={() => user?.companyId && dispatch(fetchEmployees(user.companyId))}
+          onPress={() =>
+            user?.companyId &&
+            dispatch(
+              fetchEmployees({
+                page: 1,
+                pageSize: 10,
+                companyId: user.companyId,
+              }),
+            )
+          }
         >
           <Text style={globalStylesUpdated.buttonText}>Réessayer</Text>
         </TouchableOpacity>
@@ -132,7 +174,7 @@ const EmployeeListScreen: React.FC<EmployeeListScreenProps> = ({ navigation }) =
   return (
     <View style={globalStylesUpdated.container}>
       <Text style={globalStylesUpdated.title}>Liste des Employés</Text>
-      
+
       <View style={styles.searchContainer}>
         <TextInput
           placeholder="Rechercher un employé"

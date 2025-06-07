@@ -70,3 +70,68 @@ LoadingScreen/ErrorScreen:
 Créer des composants animés
 Standardiser les messages
 Ajouter des boutons d'action contextuels
+
+ManagerDashboardScreen
+Points forts :
+
+Bonne séparation des responsabilités avec l’utilisation de hooks personnalisés (useAuth, useEmployee, etc.).
+Gestion de l’autorisation d’accès selon le rôle.
+Utilisation de Alert pour notifier l’utilisateur.
+Suggestions d’amélioration :
+
+Lisibilité : Ajoute des commentaires pour expliquer chaque bloc de logique, surtout pour les handlers et l’effet d’autorisation.
+Sécurité : Le contrôle d’accès est côté interface, mais il est recommandé de le vérifier aussi côté backend.
+Gestion d’état : Si l’application grandit, envisage d’utiliser un gestionnaire d’état global (Redux, Zustand, etc.) pour éviter la multiplication des hooks locaux.
+UX : Afficher un écran ou un message d’accès refusé (plutôt que return null) pour une meilleure expérience utilisateur.
+Réutilisabilité : Les handlers pour les tâches et congés pourraient être extraits dans des hooks ou des utilitaires pour éviter la duplication. 2. AdminDashboardScreen
+Points forts :
+
+Utilisation avancée de Redux pour la gestion d’état.
+Pagination intégrée pour les listes volumineuses.
+Feedback utilisateur via Toast pour les actions importantes.
+Utilisation d’animations pour l’affichage du titre.
+Suggestions d’amélioration :
+
+Lisibilité : Le composant est très long (plus de 400 lignes). Il serait judicieux de le découper en sous-composants (ex : liste des employés, gestion des congés, etc.).
+Performance : Attention à la multiplication des appels asynchrones dans les effets ; pense à gérer les annulations si le composant est démonté.
+Accessibilité : Ajoute des labels/accessibilité pour les boutons et éléments interactifs.
+Sécurité : Comme pour le Manager, vérifie les droits côté backend.
+DRY : Certains handlers sont similaires à ceux du Manager. Crée des utilitaires partagés ou des hooks réutilisables. 3. DashboardScreen
+Points forts :
+
+Structure claire avec gestion de la pagination locale.
+Séparation des sections (tâches, congés, équipe) via des composants réutilisables (Section).
+Utilisation d’animations pour améliorer l’expérience utilisateur.
+Suggestions d’amélioration :
+
+Pagination : Si les listes deviennent très volumineuses, privilégie la pagination côté serveur.
+Gestion des permissions : Le contrôle d’accès est bien fait, mais un feedback utilisateur en cas de refus serait un plus.
+Lisibilité : Ajoute des commentaires pour expliquer la logique de pagination et les handlers.
+Modularité : Les sections pourraient être extraites dans des fichiers séparés pour alléger le composant principal. 4. HomeScreen
+Points forts :
+
+Accueil animé et interactif, bonne gestion de l’état de chargement.
+Navigation protégée selon le rôle de l’utilisateur.
+Résumé clair des métriques principales (tâches, congés, employés).
+Suggestions d’amélioration :
+
+Sécurité/Navigation : La logique de navigation selon le rôle est bonne, mais tu pourrais centraliser cette logique dans un hook ou un utilitaire.
+Performance : Si les listes (tâches, congés, employés) deviennent grandes, pense à charger les données de façon paginée ou lazy.
+Accessibilité : Ajoute des labels et des descriptions pour les icônes et boutons.
+UX : Affiche un écran de confirmation lors de la déconnexion.
+Conseils généraux
+Factorisation : Beaucoup de logique est dupliquée entre les écrans (gestion des rôles, handlers d’actions). Envisage de créer des hooks personnalisés ou des utilitaires partagés.
+Sécurité : Les contrôles d’accès côté frontend sont importants, mais il faut aussi les appliquer côté backend.
+Lisibilité : Découpe les gros composants en sous-composants pour faciliter la maintenance.
+Tests : Ajoute des tests unitaires pour les handlers critiques (ex : gestion des congés, tâches).
+Performance : Utilise la pagination côté serveur pour les listes volumineuses.
+Si tu veux des exemples concrets de refactorisation ou d’optimisation sur un des fichiers, dis-le-moi !
+
+
+
+Si tu utilises Expo, certains modules natifs (ex : react-native-camera) peuvent poser problème ou être dépréciés. Préfère expo-camera pour une meilleure compatibilité.
+Si tu utilises Storybook, ajoute un script pour le lancer facilement.
+Pense à ajouter un champ “engines” pour spécifier les versions de node et npm/yarn recommandées.
+Ajoute un champ “description” et “repository” pour faciliter la maintenance et l’onboarding.
+Dépendances inutiles ou redondantes
+geolocation : cette dépendance semble obsolète, préfère expo-location ou react-native-geolocation-service

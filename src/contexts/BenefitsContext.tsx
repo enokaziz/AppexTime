@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { toast } from 'react-toastify'; // Importer la bibliothèque de notifications
+import Toast from 'react-native-toast-message'; // Importer la bibliothèque de notifications mobile
 
 import { Benefit } from '../types'; // Importer l'interface Benefit
 
@@ -20,10 +20,18 @@ export const BenefitsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         const response = await fetch('/api/benefits'); // Exemple d'API
         const data = await response.json();
         setBenefits(data);
-        toast.success('Données des avantages récupérées avec succès !'); // Notification de succès
+        Toast.show({
+          type: 'success',
+          text1: 'Succès',
+          text2: 'Données des avantages récupérées avec succès !',
+        }); // Notification de succès
       } catch (error) {
         console.error('Erreur lors de la récupération des avantages:', error);
-        toast.error('Erreur lors de la récupération des avantages.'); // Notification d'erreur
+        Toast.show({
+          type: 'error',
+          text1: 'Erreur',
+          text2: 'Erreur lors de la récupération des avantages.',
+        }); // Notification d'erreur
       }
     };
 

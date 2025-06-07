@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { toast } from 'react-toastify';
+import Toast from 'react-native-toast-message';
 
 interface Leave {
   employeeName: ReactNode;
@@ -29,10 +29,18 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const response = await fetch('/api/leaves');
         const data = await response.json();
         setLeaves(data);
-        toast.success('Leave data fetched successfully!');
+        Toast.show({
+          type: 'success',
+          text1: 'Succès',
+          text2: 'Congé ajouté avec succès !',
+        });
       } catch (error) {
         console.error('Error fetching leaves:', error);
-        toast.error('Error fetching leaves.');
+        Toast.show({
+          type: 'error',
+          text1: 'Erreur',
+          text2: "Erreur lors de l'ajout du congé.",
+        });
       }
     };
 

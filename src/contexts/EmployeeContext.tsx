@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { db } from '../config/firebase';
 import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { toast } from 'react-toastify'; // Importer la bibliothèque de notifications
+import Toast from 'react-native-toast-message'; // Notifications mobiles
 
 interface Employee {
   id: string;
@@ -47,10 +47,18 @@ export const EmployeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         ...doc.data(),
       })) as Employee[];
       setEmployees(employeesData);
-      toast.success('Données des employés récupérées avec succès !'); // Notification de succès
+      Toast.show({
+  type: 'success',
+  text1: 'Succès',
+  text2: 'Données des employés récupérées avec succès !',
+}); // Notification de succès
     } catch (error) {
       console.error('Erreur lors de la récupération des employés:', error);
-      toast.error('Erreur lors de la récupération des employés.'); // Notification d'erreur
+      Toast.show({
+  type: 'error',
+  text1: 'Erreur',
+  text2: 'Erreur lors de la récupération des employés.',
+}); // Notification d'erreur
     }
   };
 
@@ -58,10 +66,18 @@ export const EmployeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     try {
       await addDoc(collection(db, 'employees'), employee);
       fetchEmployees();
-      toast.success('Employé ajouté avec succès !'); // Notification de succès
+      Toast.show({
+  type: 'success',
+  text1: 'Succès',
+  text2: 'Employé ajouté avec succès !',
+}); // Notification de succès
     } catch (error) {
       console.error('Erreur lors de l\'ajout de l\'employé:', error);
-      toast.error('Erreur lors de l\'ajout de l\'employé.'); // Notification d'erreur
+      Toast.show({
+  type: 'error',
+  text1: 'Erreur',
+  text2: "Erreur lors de l'ajout de l'employé.",
+}); // Notification d'erreur
     }
   };
 
@@ -69,10 +85,18 @@ export const EmployeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     try {
       await updateDoc(doc(db, 'employees', employee.id),employee);
       fetchEmployees();
-      toast.success('Employé mis à jour avec succès !'); // Notification de succès
+      Toast.show({
+  type: 'success',
+  text1: 'Succès',
+  text2: 'Employé mis à jour avec succès !',
+}); // Notification de succès
     } catch (error) {
       console.error('Erreur lors de la mise à jour de l\'employé:', error);
-      toast.error('Erreur lors de la mise à jour de l\'employé.'); // Notification d'erreur
+      Toast.show({
+  type: 'error',
+  text1: 'Erreur',
+  text2: "Erreur lors de la mise à jour de l'employé.",
+}); // Notification d'erreur
     }
   };
 
@@ -80,10 +104,18 @@ export const EmployeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     try {
       await deleteDoc(doc(db, 'employees', id));
       fetchEmployees();
-      toast.success('Employé supprimé avec succès !'); // Notification de succès
+      Toast.show({
+  type: 'success',
+  text1: 'Succès',
+  text2: 'Employé supprimé avec succès !',
+}); // Notification de succès
     } catch (error) {
       console.error('Erreur lors de la suppression de l\'employé:', error);
-      toast.error('Erreur lors de la suppression de l\'employé.'); // Notification d'erreur
+      Toast.show({
+  type: 'error',
+  text1: 'Erreur',
+  text2: "Erreur lors de la suppression de l'employé.",
+}); // Notification d'erreur
     }
   };
 

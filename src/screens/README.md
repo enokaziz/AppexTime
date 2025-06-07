@@ -1,40 +1,43 @@
-# Screens
+# Écrans
 
-This directory contains all the screen components for the ApexTime application. Each screen file represents a specific page or view in the application.
+Ce dossier contient tous les composants d’écran de l’application ApexTime. Chaque fichier d’écran représente une page ou une vue spécifique de l’application.
 
-## Files
+## Fichiers
 
-- **AttendanceScreen.tsx**: Handles the attendance logging for employees.
-- **GenerateReportScreen.tsx**: Handles the generation of reports for employees.
-- **DashboardScreen.tsx**: Main dashboard for administrators and managers.
-- **EmployeeListScreen.tsx**: List of employees.
-- **EmployeeProfileScreen.tsx**: Detailed profile of an employee.
-- **LoginScreen.tsx**: Login screen for authentication.
-- **ForgotPasswordScreen.tsx**: Screen for password recovery.
-- **SignupScreen.tsx**: Screen for user registration.
-- **AdminDashboardScreen.tsx**: Dashboard for administrators.
-- **ManagerDashboardScreen.tsx**: Dashboard for managers.
-- **AbsenceManagementScreen.tsx**: Management of employee absences.
-- **LeaveManagementScreen.tsx**: Management of employee leaves.
-- **OvertimeManagementScreen.tsx**: Management of employee overtime.
-- **PayrollScreen.tsx**: Management of employee payroll.
-- **SupportScreen.tsx**: Support and help functionalities.
-- **TeamPerformanceScreen.tsx**: Performance tracking for teams.
+- **Auth/ForgotPasswordScreen.tsx** : Écran de récupération du mot de passe.
+- **Auth/LoginScreen.tsx** : Écran de connexion pour l’authentification.
+- **Auth/SignupScreen.tsx** : Écran d’inscription des utilisateurs.
+- ...
 
-## Usage
+## Structure type d’un écran
+```tsx
+import React from 'react';
+import { View, Text } from 'react-native';
 
-Each screen file exports a React component that can be imported and used in the navigation stack. For example:
-
-```typescript
-import { AttendanceScreen } from './AttendanceScreen';
-
-const AppNavigator = () => (
-  <Stack.Navigator>
-    <Stack.Screen name="Attendance" component={AttendanceScreen} />
-  </Stack.Navigator>
+const ExampleScreen = () => (
+  <View>
+    <Text>Contenu de l’écran</Text>
+  </View>
 );
+export default ExampleScreen;
 ```
 
-## Contributing
+## Conventions
+- Un fichier = un écran.
+- Utiliser le suffixe `Screen`.
+- Organiser par domaine fonctionnel (auth, employee, dashboard, etc.).
+- Documenter les props et hooks utilisés.
 
-If you want to add a new screen, create a new file in this directory and follow the existing patterns. Make sure to add JSDoc comments for all functions and components.
+## Ajouter un écran
+1. Créer le fichier dans le bon sous-dossier.
+2. Respecter la structure type ci-dessus.
+3. Ajouter une description ici.
+4. Mettre à jour la navigation si besoin.
+
+## Conseils
+- Séparer la logique métier et la présentation (hooks, composants).
+- Préférer des composants réutilisables.
+- Ajouter des tests si possible.
+
+## Auteurs
+- Equipe ApexTime

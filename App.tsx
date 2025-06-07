@@ -32,7 +32,6 @@ export const navigationRef = createRef<NavigationContainerRef<ParamListBase>>();
 const Navigation = () => {
   const { isLoading, user } = useAuth();
   const extendedUser = user as unknown as ExtendedUser | null;
-  
   // Appel conditionnel du hook mais avec des valeurs par défaut pour maintenir l'ordre
   usePreloader(extendedUser?.id || '', extendedUser?.role || '');
 
@@ -49,7 +48,7 @@ const Navigation = () => {
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#0066cc" />
         <Text style={styles.loadingText}>Chargement de l'application...</Text>
-      </View>
+    </View>
     );
   }
 

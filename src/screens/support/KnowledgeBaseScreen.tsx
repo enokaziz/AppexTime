@@ -1,19 +1,31 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput } from 'react-native';
-import KnowledgeBase from '../components/KnowledgeBase';
+import KnowledgeBase from '../../components/KnowledgeBase';
 
 const faq = [
-  { question: 'Comment ajouter un employé ?', answer: 'Allez dans la section "Gestion des employés" et cliquez sur "Ajouter un employé".' },
-  { question: 'Comment générer un badge ?', answer: 'Allez dans la section "Gestion des badges" et cliquez sur "Générer un badge".' },
-  { question: 'Comment signaler un problème ?', answer: 'Allez dans la section "Support" et cliquez sur "Nouvelle demande de support".' },
+  {
+    question: 'Comment ajouter un employé ?',
+    answer:
+      'Allez dans la section "Gestion des employés" et cliquez sur "Ajouter un employé".',
+  },
+  {
+    question: 'Comment générer un badge ?',
+    answer:
+      'Allez dans la section "Gestion des badges" et cliquez sur "Générer un badge".',
+  },
+  {
+    question: 'Comment signaler un problème ?',
+    answer:
+      'Allez dans la section "Support" et cliquez sur "Nouvelle demande de support".',
+  },
   // Add more FAQ entries as needed
 ];
 
 const KnowledgeBaseScreen: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredFaq = faq.filter(item =>
-    item.question.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredFaq = faq.filter((item) =>
+    item.question.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -51,4 +63,3 @@ const styles = StyleSheet.create({
 });
 
 export default KnowledgeBaseScreen;
-

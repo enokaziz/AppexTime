@@ -8,30 +8,29 @@ import {
   ActivityIndicator,
   Animated,
 } from 'react-native';
-import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { updateLeaveStatus, fetchLeaves } from '../store/slices/leaveSlice';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { updateLeaveStatus, fetchLeaves } from '../../store/slices/leaveSlice';
 import {
   updateTaskStatus,
   fetchTasks,
   addTask,
-} from '../store/slices/taskSlice';
+} from '../../store/slices/taskSlice';
 import {
   deleteEmployee,
   fetchEmployees,
   addEmployee,
-} from '../store/slices/employeeSlice';
-import { logoutUser } from '../store/slices/authSlice';
-import { Leave, Task, LeaveStatus, TaskStatus } from '../types';
-import { Employee, PhotoData } from '../types/employee';
-import { colors } from '../styles/globalStylesUpdated';
+} from '../../store/slices/employeeSlice';
+import { logoutUser } from '../../store/slices/authSlice';
+import { Leave, Task, LeaveStatus, TaskStatus } from '../../types';
+import { Employee, PhotoData } from '../../types/employee';
+import { colors } from '../../styles/globalStylesUpdated';
 import Toast from 'react-native-toast-message';
 import { Ionicons } from '@expo/vector-icons';
 import {
   NavigationContainerRef,
   ParamListBase,
 } from '@react-navigation/native';
-import { UserRole, Permissions } from '../types/Permissions';
-import { RootState } from '../store';
+import { RootState } from '../../store';
 
 interface SectionProps<T> {
   title: string;
@@ -112,8 +111,16 @@ const AdminDashboardScreen: React.FC = () => {
     // Charger les données paginées
     dispatch(fetchLeaves({ page: currentPage, pageSize }));
     dispatch(fetchTasks({ page: currentPage, pageSize }));
-    dispatch(fetchEmployees({ page: currentPage, pageSize }));
-  }, [currentPage, pageSize]);
+    if (user?.companyId) {
+      dispatch(
+        fetchEmployees({
+          page: currentPage,
+          pageSize,
+          companyId: user.companyId,
+        }),
+      );
+    }
+  }, [currentPage, pageSize, user?.companyId]);
 
   const handleLeaveStatusUpdate = async (
     leaveId: string,
@@ -208,7 +215,11 @@ const AdminDashboardScreen: React.FC = () => {
     const fetchEmployeesAsync = async () => {
       try {
         const employees = await dispatch(
-          fetchEmployees({ page: currentPage, pageSize })
+          fetchEmployees({
+            page: currentPage,
+            pageSize,
+            companyId: user?.companyId || '',
+          }),
         ).unwrap();
         console.log(employees);
       } catch (error: any) {
@@ -216,7 +227,7 @@ const AdminDashboardScreen: React.FC = () => {
       }
     };
     fetchEmployeesAsync();
-  }, [dispatch]);
+  }, [dispatch, currentPage, pageSize, user?.companyId]);
 
   if (isLoading) {
     return (

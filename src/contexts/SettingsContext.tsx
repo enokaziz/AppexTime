@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { toast } from 'react-toastify'; // Importer la bibliothèque de notifications
+import Toast from 'react-native-toast-message'; // Notifications mobiles
 
 interface Settings {
   theme: string;
@@ -23,10 +23,18 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         const response = await fetch('/api/settings'); // Exemple d'API
         const data = await response.json();
         setSettings(data);
-        toast.success('Données de paramètres récupérées avec succès !'); // Notification de succès
+        Toast.show({
+          type: 'success',
+          text1: 'Succès',
+          text2: 'Thème changé avec succès !',
+        }); // Notification de succès
       } catch (error) {
         console.error('Erreur lors de la récupération des paramètres:', error);
-        toast.error('Erreur lors de la récupération des paramètres.'); // Notification d'erreur
+        Toast.show({
+          type: 'error',
+          text1: 'Erreur',
+          text2: "Erreur lors du changement de thème.",
+        }); // Notification d'erreur
       }
     };
 

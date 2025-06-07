@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  KeyboardAvoidingView, 
-  Platform, 
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
   ActivityIndicator,
-  Image,
   ScrollView,
   Animated,
-  StyleSheet
+  StyleSheet,
 } from 'react-native';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
@@ -49,17 +48,19 @@ const addEmployeeSchema = Yup.object().shape({
     .required('Numéro requis'),
 });
 
-const AddEmployeeScreen: React.FC<AddEmployeeScreenProps> = ({ navigation }) => {
+const AddEmployeeScreen: React.FC<AddEmployeeScreenProps> = ({
+  navigation,
+}) => {
   const dispatch = useAppDispatch();
   const toast = useToast();
-  const { user, role } = useAppSelector((state: RootState) => state.auth);
+  const { user } = useAppSelector((state: RootState) => state.auth);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const titleOpacity = React.useRef(new Animated.Value(0)).current;
   const formTranslateY = React.useRef(new Animated.Value(50)).current;
 
   React.useEffect(() => {
-    if (role !== 'admin') {
-      toast.error('Vous n\'avez pas les permissions nécessaires');
+    if (user?.role !== 'admin') {
+      toast.error("Vous n'avez pas les permissions nécessaires");
       navigation.goBack();
       return;
     }
@@ -68,35 +69,32 @@ const AddEmployeeScreen: React.FC<AddEmployeeScreenProps> = ({ navigation }) => 
       Animated.timing(titleOpacity, {
         toValue: 1,
         duration: 1000,
-        useNativeDriver: true
+        useNativeDriver: true,
       }),
       Animated.timing(formTranslateY, {
         toValue: 0,
         duration: 800,
-        useNativeDriver: true
-      })
+        useNativeDriver: true,
+      }),
     ]).start();
-  }, [role]);
+  }, [user?.role]);
 
   return (
-    <KeyboardAvoidingView 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={globalStylesUpdated.container}
     >
       <ScrollView showsVerticalScrollIndicator={false}>
-        <Animated.Text 
-          style={[
-            globalStylesUpdated.title, 
-            { opacity: titleOpacity }
-          ]}
+        <Animated.Text
+          style={[globalStylesUpdated.title, { opacity: titleOpacity }]}
         >
           Ajouter un Employé
         </Animated.Text>
 
-        <Animated.View 
+        <Animated.View
           style={[
-            styles.formContainer, 
-            { transform: [{ translateY: formTranslateY }] }
+            styles.formContainer,
+            { transform: [{ translateY: formTranslateY }] },
           ]}
         >
           <Formik
@@ -114,44 +112,56 @@ const AddEmployeeScreen: React.FC<AddEmployeeScreenProps> = ({ navigation }) => 
                 }
 
                 if (!user?.companyId) {
-                  toast.error('Erreur: ID de l\'entreprise non trouvé');
+                  toast.error("Erreur: ID de l'entreprise non trouvé");
                   return;
                 }
 
                 const employeeId = generateUniqueId('EMP');
-                
-                await dispatch(addEmployee({
-                  employeeData: {
-                    ...values,
-                    employeeId,
-                    companyId: user.companyId,
-                  },
-                  photoData: {
-                    uri: photoUri,
-                    type: 'image/jpeg',
-                    name: `${employeeId}_photo.jpg`
-                  }
-                })).unwrap();
+
+                await dispatch(
+                  addEmployee({
+                    employeeData: {
+                      ...values,
+                      employeeId,
+                      companyId: user.companyId,
+                      name: `${values.firstName} ${values.lastName}`,
+                      email: `${values.firstName.toLowerCase()}.${values.lastName.toLowerCase()}@company.com`,
+                    },
+                    photoData: {
+                      uri: photoUri,
+                      type: 'image/jpeg',
+                      name: `${employeeId}_photo.jpg`,
+                    },
+                  }),
+                ).unwrap();
 
                 toast.success('Employé ajouté avec succès');
                 resetForm();
                 setPhotoUri(null);
                 navigation.goBack();
               } catch (error) {
-                toast.error('Erreur lors de l\'ajout de l\'employé');
+                toast.error("Erreur lors de l'ajout de l'employé");
               } finally {
                 setSubmitting(false);
               }
             }}
           >
-            {({ handleChange, handleBlur, handleSubmit, values, errors, touched, isSubmitting }) => (
+            {({
+              handleChange,
+              handleBlur,
+              handleSubmit,
+              values,
+              errors,
+              touched,
+              isSubmitting,
+            }) => (
               <View>
                 <PhotoPicker photoUri={photoUri} setPhotoUri={setPhotoUri} />
 
                 <TextInput
                   style={[
                     globalStylesUpdated.input,
-                    touched.firstName && errors.firstName && styles.inputError
+                    touched.firstName && errors.firstName && styles.inputError,
                   ]}
                   placeholder="Prénom"
                   value={values.firstName}
@@ -165,7 +175,7 @@ const AddEmployeeScreen: React.FC<AddEmployeeScreenProps> = ({ navigation }) => 
                 <TextInput
                   style={[
                     globalStylesUpdated.input,
-                    touched.lastName && errors.lastName && styles.inputError
+                    touched.lastName && errors.lastName && styles.inputError,
                   ]}
                   placeholder="Nom"
                   value={values.lastName}
@@ -179,7 +189,7 @@ const AddEmployeeScreen: React.FC<AddEmployeeScreenProps> = ({ navigation }) => 
                 <TextInput
                   style={[
                     globalStylesUpdated.input,
-                    touched.phone && errors.phone && styles.inputError
+                    touched.phone && errors.phone && styles.inputError,
                   ]}
                   placeholder="Numéro de Téléphone"
                   value={values.phone}
@@ -195,7 +205,7 @@ const AddEmployeeScreen: React.FC<AddEmployeeScreenProps> = ({ navigation }) => 
                   style={[
                     globalStylesUpdated.button,
                     styles.submitButton,
-                    isSubmitting && styles.buttonDisabled
+                    isSubmitting && styles.buttonDisabled,
                   ]}
                   onPress={() => handleSubmit()}
                   disabled={isSubmitting}
@@ -203,7 +213,9 @@ const AddEmployeeScreen: React.FC<AddEmployeeScreenProps> = ({ navigation }) => 
                   {isSubmitting ? (
                     <ActivityIndicator color="#fff" />
                   ) : (
-                    <Text style={globalStylesUpdated.buttonText}>Ajouter l'employé</Text>
+                    <Text style={globalStylesUpdated.buttonText}>
+                      Ajouter l'employé
+                    </Text>
                   )}
                 </TouchableOpacity>
               </View>

@@ -1,7 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, FlatList, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  Button,
+  FlatList,
+  StyleSheet,
+} from 'react-native';
 import { getLeaves, addLeave } from '@services/leave'; // Importer les services
-import { Leave } from '../types/index'; // Importer le type Leave
+import { Leave } from '../../types/index'; // Importer le type Leave
 
 const LeaveManagementScreen = () => {
   const [startDate, setStartDate] = useState('');
@@ -12,17 +19,19 @@ const LeaveManagementScreen = () => {
   useEffect(() => {
     const fetchLeaves = async () => {
       const leavesData = await getLeaves();
-      const formattedLeaves = leavesData.map(leave => {
-        if (leave.startDate && leave.endDate && leave.reason) {
-          return {
-            id: leave.id,
-            startDate: leave.startDate,
-            endDate: leave.endDate,
-            reason: leave.reason,
-          };
-        }
-        return null; // Ignorer les entrées incomplètes
-      }).filter(leave => leave !== null) as Leave[]; // Filtrer les entrées null et forcer le type
+      const formattedLeaves = leavesData
+        .map((leave) => {
+          if (leave.startDate && leave.endDate && leave.reason) {
+            return {
+              id: leave.id,
+              startDate: leave.startDate,
+              endDate: leave.endDate,
+              reason: leave.reason,
+            };
+          }
+          return null; // Ignorer les entrées incomplètes
+        })
+        .filter((leave) => leave !== null) as Leave[]; // Filtrer les entrées null et forcer le type
       setLeaves(formattedLeaves);
     };
     fetchLeaves();
@@ -41,7 +50,7 @@ const LeaveManagementScreen = () => {
     setReason('');
     // Recharger les demandes de congé
     const leavesData = await getLeaves();
-    const formattedLeaves = leavesData.map(leave => ({
+    const formattedLeaves = leavesData.map((leave) => ({
       id: leave.id,
       startDate: leave.startDate || '',
       endDate: leave.endDate || '',
@@ -107,4 +116,3 @@ const styles = StyleSheet.create({
   },
 });
 export default LeaveManagementScreen;
-

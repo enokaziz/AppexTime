@@ -45,7 +45,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const userData = userDoc.data() as UserData;
           console.log('Rôle récupéré depuis Firestore :', userData.role);
           setRole(userData.role || null);
-          
           // Navigation conditionnelle basée sur le rôle
           if (userData.role === 'admin') {
             navigationRef.current?.navigate('AdminDashboard');

@@ -4,11 +4,10 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
+  ScrollView,
   TouchableOpacity,
   ActivityIndicator,
   Animated,
-  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import useEmployee from '@hooks/useEmployee';
@@ -16,10 +15,8 @@ import useLeave from '@hooks/useLeave';
 import useTasks from '@hooks/useTasks';
 import { useNavigation } from '@react-navigation/native';
 import { AuthScreenNavigationProp } from '../navigation/types';
-import { Leave } from '../types/index';
 import Toast from 'react-native-toast-message';
-import { globalStylesUpdated, colors } from '../styles/globalStylesUpdated';
-import { signOut } from 'firebase/auth';
+import { colors } from '../styles/globalStylesUpdated';
 
 type AllowedScreens =
   | 'Dashboard'
@@ -28,6 +25,157 @@ type AllowedScreens =
   | 'EmployeeList'
   | 'TaskManagement'
   | 'SubmitLeave';
+
+// Composant de carte réutilisable
+const AnimatedCard: React.FC<{
+  children: React.ReactNode;
+  translateY: Animated.Value;
+}> = ({ children, translateY }) => (
+  <Animated.View style={[styles.card, { transform: [{ translateY }] }]}>
+    {children}
+  </Animated.View>
+);
+
+// Composant de résumé
+const SummaryCard: React.FC<{
+  tasks: any[];
+  leaves: any[];
+  employees: any[];
+  translateY: Animated.Value;
+}> = ({ tasks, leaves, employees, translateY }) => (
+  <AnimatedCard translateY={translateY}>
+    <Text style={styles.cardTitle}>Résumé</Text>
+    <View style={styles.summaryContainer}>
+      <View style={styles.summaryItem}>
+        <Ionicons name="checkmark-circle" size={24} color={colors.primary} />
+        <Text style={styles.summaryValue}>{tasks.length}</Text>
+        <Text style={styles.summaryLabel}>Tâches</Text>
+      </View>
+      <View style={styles.summaryItem}>
+        <Ionicons name="calendar" size={24} color={colors.primary} />
+        <Text style={styles.summaryValue}>{leaves.length}</Text>
+        <Text style={styles.summaryLabel}>Congés</Text>
+      </View>
+      <View style={styles.summaryItem}>
+        <Ionicons name="people" size={24} color={colors.primary} />
+        <Text style={styles.summaryValue}>{employees.length}</Text>
+        <Text style={styles.summaryLabel}>Employés</Text>
+      </View>
+    </View>
+  </AnimatedCard>
+);
+
+// Composant de notifications
+const NotificationsCard: React.FC<{
+  leaves: any[];
+  translateY: Animated.Value;
+}> = ({ leaves, translateY }) => (
+  <AnimatedCard translateY={translateY}>
+    <View style={styles.cardHeader}>
+      <Text style={styles.cardTitle}>Notifications</Text>
+      <TouchableOpacity>
+        <Text style={styles.seeAllButton}>Voir tout</Text>
+      </TouchableOpacity>
+    </View>
+    <View style={styles.notificationsContainer}>
+      {leaves.slice(0, 5).map((item) => (
+        <View key={item.id} style={styles.notificationItem}>
+          <View style={styles.notificationContent}>
+            <Text style={styles.notificationName}>
+              {item.employeeName || 'Inconnu'}
+            </Text>
+            <Text style={styles.notificationDate}>
+              {item.startDate} - {item.endDate}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={colors.primary} />
+        </View>
+      ))}
+      {leaves.length === 0 && (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="notifications-off" size={40} color={colors.border} />
+          <Text style={styles.emptyText}>Aucune notification</Text>
+        </View>
+      )}
+    </View>
+  </AnimatedCard>
+);
+
+// Composant de liens rapides
+const QuickLinksCard: React.FC<{
+  role: string | null;
+  handleNavigation: (screen: AllowedScreens) => void;
+  translateY: Animated.Value;
+}> = ({ role, handleNavigation, translateY }) => (
+  <AnimatedCard translateY={translateY}>
+    <Text style={styles.cardTitle}>Liens Rapides</Text>
+    <View style={styles.linksContainer}>
+      {(role === 'admin' || role === 'manager') && (
+        <>
+          {role === 'admin' && (
+            <TouchableOpacity
+              style={styles.linkButton}
+              onPress={() => handleNavigation('AdminDashboard')}
+              accessibilityLabel="Accéder au tableau de bord administrateur"
+            >
+              <Ionicons name="analytics" size={24} color={colors.white} />
+              <Text style={styles.linkText}>Tableau Admin</Text>
+            </TouchableOpacity>
+          )}
+          {role === 'manager' && (
+            <TouchableOpacity
+              style={styles.linkButton}
+              onPress={() => handleNavigation('ManagerDashboard')}
+              accessibilityLabel="Accéder au tableau de bord manager"
+            >
+              <Ionicons name="bar-chart" size={24} color={colors.white} />
+              <Text style={styles.linkText}>Tableau Manager</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity
+            style={styles.linkButton}
+            onPress={() => handleNavigation('EmployeeList')}
+            accessibilityLabel="Gérer les employés"
+          >
+            <Ionicons name="people" size={24} color={colors.white} />
+            <Text style={styles.linkText}>Gérer Employés</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.linkButton}
+            onPress={() => handleNavigation('TaskManagement')}
+            accessibilityLabel="Gérer les tâches"
+          >
+            <Ionicons name="list" size={24} color={colors.white} />
+            <Text style={styles.linkText}>Gérer Tâches</Text>
+          </TouchableOpacity>
+        </>
+      )}
+      <TouchableOpacity
+        style={styles.linkButton}
+        onPress={() => handleNavigation('Dashboard')}
+        accessibilityLabel="Accéder au tableau de bord"
+      >
+        <Ionicons name="grid" size={24} color={colors.white} />
+        <Text style={styles.linkText}>Tableau de Bord</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.linkButton}
+        onPress={() => {
+          handleNavigation('SubmitLeave');
+          Toast.show({
+            type: 'info',
+            text1: 'Action',
+            text2: 'Demande de congé ouverte.',
+          });
+        }}
+        accessibilityLabel="Demander un congé"
+      >
+        <Ionicons name="calendar" size={24} color={colors.white} />
+        <Text style={styles.linkText}>Demander Congé</Text>
+      </TouchableOpacity>
+    </View>
+  </AnimatedCard>
+);
 
 const HomeScreen = () => {
   const { user, role, logout } = useAuth();
@@ -40,7 +188,7 @@ const HomeScreen = () => {
   const cardTranslateY = React.useRef(new Animated.Value(50)).current;
 
   useEffect(() => {
-    Animated.parallel([
+    const animation = Animated.parallel([
       Animated.timing(headerOpacity, {
         toValue: 1,
         duration: 1000,
@@ -51,8 +199,14 @@ const HomeScreen = () => {
         duration: 800,
         useNativeDriver: true,
       }),
-    ]).start();
+    ]);
+
+    animation.start();
     setIsLoading(false);
+
+    return () => {
+      animation.stop();
+    };
   }, []);
 
   const handleLogout = async () => {
@@ -63,11 +217,12 @@ const HomeScreen = () => {
         text1: 'Déconnexion réussie',
         text2: 'À bientôt!',
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Erreur de déconnexion:', error);
       Toast.show({
         type: 'error',
         text1: 'Erreur',
-        text2: 'Impossible de se déconnecter',
+        text2: `Impossible de se déconnecter: ${error.message}`,
       });
     }
   };
@@ -109,170 +264,34 @@ const HomeScreen = () => {
               Voici un aperçu de vos activités
             </Text>
           </View>
-          <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+          <TouchableOpacity
+            onPress={handleLogout}
+            style={styles.logoutButton}
+            accessibilityLabel="Se déconnecter"
+          >
             <Ionicons name="log-out-outline" size={24} color={colors.error} />
           </TouchableOpacity>
         </View>
       </Animated.View>
 
-      <FlatList
-        data={[1]} // Un seul élément pour le contenu principal
-        showsVerticalScrollIndicator={false}
-        keyExtractor={() => 'main'}
-        renderItem={() => (
-          <>
-            <Animated.View
-              style={[
-                styles.card,
-                { transform: [{ translateY: cardTranslateY }] },
-              ]}
-            >
-              <Text style={styles.cardTitle}>Résumé</Text>
-              <View style={styles.summaryContainer}>
-                <View style={styles.summaryItem}>
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={24}
-                    color={colors.primary}
-                  />
-                  <Text style={styles.summaryValue}>{tasks.length}</Text>
-                  <Text style={styles.summaryLabel}>Tâches</Text>
-                </View>
-                <View style={styles.summaryItem}>
-                  <Ionicons name="calendar" size={24} color={colors.primary} />
-                  <Text style={styles.summaryValue}>{leaves.length}</Text>
-                  <Text style={styles.summaryLabel}>Congés</Text>
-                </View>
-                <View style={styles.summaryItem}>
-                  <Ionicons name="people" size={24} color={colors.primary} />
-                  <Text style={styles.summaryValue}>{employees.length}</Text>
-                  <Text style={styles.summaryLabel}>Employés</Text>
-                </View>
-              </View>
-            </Animated.View>
-
-            <Animated.View
-              style={[
-                styles.card,
-                { transform: [{ translateY: cardTranslateY }] },
-              ]}
-            >
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle}>Notifications</Text>
-                <TouchableOpacity>
-                  <Text style={styles.seeAllButton}>Voir tout</Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.notificationsContainer}>
-                {leaves.slice(0, 5).map((item) => (
-                  <View key={item.id} style={styles.notificationItem}>
-                    <View style={styles.notificationContent}>
-                      <Text style={styles.notificationName}>
-                        {item.employeeName || 'Inconnu'}
-                      </Text>
-                      <Text style={styles.notificationDate}>
-                        {item.startDate} - {item.endDate}
-                      </Text>
-                    </View>
-                    <Ionicons
-                      name="chevron-forward"
-                      size={20}
-                      color={colors.primary}
-                    />
-                  </View>
-                ))}
-                {leaves.length === 0 && (
-                  <View style={styles.emptyContainer}>
-                    <Ionicons
-                      name="notifications-off"
-                      size={40}
-                      color={colors.border}
-                    />
-                    <Text style={styles.emptyText}>Aucune notification</Text>
-                  </View>
-                )}
-              </View>
-            </Animated.View>
-
-            <Animated.View
-              style={[
-                styles.card,
-                { transform: [{ translateY: cardTranslateY }] },
-              ]}
-            >
-              <Text style={styles.cardTitle}>Liens Rapides</Text>
-              <View style={styles.linksContainer}>
-                {(role === 'admin' || role === 'manager') && (
-                  <>
-                    {role === 'admin' && (
-                      <TouchableOpacity
-                        style={styles.linkButton}
-                        onPress={() => handleNavigation('AdminDashboard')}
-                      >
-                        <Ionicons
-                          name="analytics"
-                          size={24}
-                          color={colors.white}
-                        />
-                        <Text style={styles.linkText}>Tableau Admin</Text>
-                      </TouchableOpacity>
-                    )}
-                    {role === 'manager' && (
-                      <TouchableOpacity
-                        style={styles.linkButton}
-                        onPress={() => handleNavigation('ManagerDashboard')}
-                      >
-                        <Ionicons
-                          name="bar-chart"
-                          size={24}
-                          color={colors.white}
-                        />
-                        <Text style={styles.linkText}>Tableau Manager</Text>
-                      </TouchableOpacity>
-                    )}
-                    <TouchableOpacity
-                      style={styles.linkButton}
-                      onPress={() => handleNavigation('EmployeeList')}
-                    >
-                      <Ionicons name="people" size={24} color={colors.white} />
-                      <Text style={styles.linkText}>Gérer Employés</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.linkButton}
-                      onPress={() => handleNavigation('TaskManagement')}
-                    >
-                      <Ionicons name="list" size={24} color={colors.white} />
-                      <Text style={styles.linkText}>Gérer Tâches</Text>
-                    </TouchableOpacity>
-                  </>
-                )}
-                <TouchableOpacity
-                  style={styles.linkButton}
-                  onPress={() => handleNavigation('Dashboard')}
-                >
-                  <Ionicons name="grid" size={24} color={colors.white} />
-                  <Text style={styles.linkText}>Tableau de Bord</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.linkButton}
-                  onPress={() => {
-                    handleNavigation('SubmitLeave');
-                    Toast.show({
-                      type: 'info',
-                      text1: 'Action',
-                      text2: 'Demande de congé ouverte.',
-                    });
-                  }}
-                >
-                  <Ionicons name="calendar" size={24} color={colors.white} />
-                  <Text style={styles.linkText}>Demander Congé</Text>
-                </TouchableOpacity>
-              </View>
-            </Animated.View>
-          </>
-        )}
+      <ScrollView
+        style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
-      />
+        showsVerticalScrollIndicator={false}
+      >
+        <SummaryCard
+          tasks={tasks}
+          leaves={leaves}
+          employees={employees}
+          translateY={cardTranslateY}
+        />
+        <NotificationsCard leaves={leaves} translateY={cardTranslateY} />
+        <QuickLinksCard
+          role={role}
+          handleNavigation={handleNavigation}
+          translateY={cardTranslateY}
+        />
+      </ScrollView>
     </View>
   );
 };
@@ -281,6 +300,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  scrollView: {
+    flex: 1,
   },
   loadingContainer: {
     flex: 1,

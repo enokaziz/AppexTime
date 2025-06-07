@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { db, storage } from '../../config/firebase';
-import { 
+import {
   collection,
   addDoc,
   query,
@@ -12,10 +12,14 @@ import {
   orderBy,
   limit,
   startAfter,
-  deleteDoc
+  deleteDoc,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Employee, PhotoData, UpdateEmployeePayload } from '../../types/employee';
+import {
+  Employee,
+  PhotoData,
+  UpdateEmployeePayload,
+} from '../../types/employee';
 
 interface EmployeeState {
   employees: Employee[];
@@ -43,13 +47,19 @@ const initialState: EmployeeState = {
 
 export const addEmployee = createAsyncThunk(
   'employee/add',
-  async ({ employeeData, photoData }: { 
+  async ({
+    employeeData,
+    photoData,
+  }: {
     employeeData: Omit<Employee, 'id' | 'photoUrl' | 'createdAt' | 'updatedAt'>;
     photoData: PhotoData;
   }) => {
     try {
       // Upload photo
-      const photoRef = ref(storage, `employees/${Date.now()}_${photoData.name}`);
+      const photoRef = ref(
+        storage,
+        `employees/${Date.now()}_${photoData.name}`,
+      );
       const response = await fetch(photoData.uri);
       const blob = await response.blob();
       await uploadBytes(photoRef, blob);
@@ -75,7 +85,7 @@ export const addEmployee = createAsyncThunk(
     } catch (error: any) {
       throw new Error(error.message);
     }
-  }
+  },
 );
 
 export const updateEmployee = createAsyncThunk(
@@ -85,7 +95,10 @@ export const updateEmployee = createAsyncThunk(
       let photoUrl: string | undefined;
 
       if (photoData) {
-        const photoRef = ref(storage, `employees/${Date.now()}_${photoData.name}`);
+        const photoRef = ref(
+          storage,
+          `employees/${Date.now()}_${photoData.name}`,
+        );
         const response = await fetch(photoData.uri);
         const blob = await response.blob();
         await uploadBytes(photoRef, blob);
@@ -94,7 +107,7 @@ export const updateEmployee = createAsyncThunk(
 
       const timestamp = Timestamp.now();
       const employeeRef = doc(db, 'employees', id);
-      
+
       const updateData = {
         ...employeeData,
         ...(photoUrl && { photoUrl }),
@@ -112,7 +125,7 @@ export const updateEmployee = createAsyncThunk(
     } catch (error: any) {
       throw new Error(error.message);
     }
-  }
+  },
 );
 
 export const deleteEmployee = createAsyncThunk(
@@ -124,22 +137,36 @@ export const deleteEmployee = createAsyncThunk(
     } catch (error: any) {
       throw new Error(error.message);
     }
-  }
+  },
 );
 
 export const fetchEmployees = createAsyncThunk(
   'employee/fetchEmployees',
-  async ({ page = 1, pageSize = 10 }: { page?: number; pageSize?: number }) => {
+  async ({
+    page = 1,
+    pageSize = 10,
+    companyId,
+  }: {
+    page?: number;
+    pageSize?: number;
+    companyId: string;
+  }) => {
     try {
-      const lastDoc = await getLastDocFromServer(db, 'employees', page, pageSize);
+      const lastDoc = await getLastDocFromServer(
+        db,
+        'employees',
+        page,
+        pageSize,
+      );
       const q = query(
         collection(db, 'employees'),
+        where('companyId', '==', companyId),
         orderBy('createdAt', 'desc'),
         limit(pageSize),
-        startAfter(lastDoc)
+        startAfter(lastDoc),
       );
       const querySnapshot = await getDocs(q);
-      const employees = querySnapshot.docs.map(doc => ({
+      const employees = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         email: doc.data().email,
         name: doc.data().name,
@@ -150,10 +177,10 @@ export const fetchEmployees = createAsyncThunk(
         employeeId: doc.data().employeeId,
         companyId: doc.data().companyId,
         createdAt: doc.data().createdAt,
-        updatedAt: doc.data().updatedAt
+        updatedAt: doc.data().updatedAt,
       }));
       const totalItems = await getCollectionCount(collection(db, 'employees'));
-      
+
       return {
         employees,
         totalItems,
@@ -161,16 +188,25 @@ export const fetchEmployees = createAsyncThunk(
     } catch (error: any) {
       throw new Error(error.message);
     }
-  }
+  },
 );
 
-const getLastDocFromServer = async (db: any, collectionName: string, page: number, pageSize: number) => {
+const getLastDocFromServer = async (
+  db: any,
+  collectionName: string,
+  page: number,
+  pageSize: number,
+) => {
   const firstPage = page === 1;
   if (firstPage) {
     return null;
   }
   const offset = (page - 1) * pageSize;
-  const q = query(collection(db, collectionName), orderBy('createdAt', 'desc'), limit(offset + 1));
+  const q = query(
+    collection(db, collectionName),
+    orderBy('createdAt', 'desc'),
+    limit(offset + 1),
+  );
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs[offset];
 };
@@ -192,11 +228,15 @@ const employeeSlice = createSlice({
       state.pagination.totalItems++;
     },
     removeEmployee: (state, action: PayloadAction<string>) => {
-      state.employees = state.employees.filter(employee => employee.id !== action.payload);
+      state.employees = state.employees.filter(
+        (employee) => employee.id !== action.payload,
+      );
       state.pagination.totalItems--;
     },
     updateExistingEmployee: (state, action: PayloadAction<Employee>) => {
-      const index = state.employees.findIndex(employee => employee.id === action.payload.id);
+      const index = state.employees.findIndex(
+        (employee) => employee.id === action.payload.id,
+      );
       if (index !== -1) {
         state.employees[index] = action.payload;
       }
@@ -218,25 +258,30 @@ const employeeSlice = createSlice({
         state.loading = false;
         state.employees = action.payload.employees;
         state.pagination.totalItems = action.payload.totalItems;
-        state.pagination.totalPages = Math.ceil(action.payload.totalItems / state.pagination.pageSize);
+        state.pagination.totalPages = Math.ceil(
+          action.payload.totalItems / state.pagination.pageSize,
+        );
       })
       .addCase(fetchEmployees.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || 'Erreur lors du chargement des employés';
+        state.error =
+          action.error.message || 'Erreur lors du chargement des employés';
       })
       .addCase(deleteEmployee.fulfilled, (state, action) => {
-        state.employees = state.employees.filter(employee => employee.id !== action.payload);
+        state.employees = state.employees.filter(
+          (employee) => employee.id !== action.payload,
+        );
         state.pagination.totalItems--;
       });
   },
 });
 
-export const { 
-  setEmployeeList, 
-  addNewEmployee, 
-  removeEmployee, 
+export const {
+  setEmployeeList,
+  addNewEmployee,
+  removeEmployee,
   updateExistingEmployee,
   setCurrentPage,
-  setItemsPerPage 
+  setItemsPerPage,
 } = employeeSlice.actions;
 export default employeeSlice.reducer;

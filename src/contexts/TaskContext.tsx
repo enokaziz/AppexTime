@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { toast } from 'react-toastify';
+import Toast from 'react-native-toast-message';
 
 interface Task {
   assignedTo: ReactNode;
@@ -29,10 +29,18 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const response = await fetch('/api/tasks');
         const data = await response.json();
         setTasks(data);
-        toast.success('Task data fetched successfully!');
+        Toast.show({
+          type: 'success',
+          text1: 'Succès',
+          text2: 'Tâche ajoutée avec succès !',
+        });
       } catch (error) {
         console.error('Error fetching tasks:', error);
-        toast.error('Error fetching tasks.');
+        Toast.show({
+          type: 'error',
+          text1: 'Erreur',
+          text2: "Erreur lors de l'ajout de la tâche.",
+        });
       }
     };
 

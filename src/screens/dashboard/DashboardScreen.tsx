@@ -1,10 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Animated,
+} from 'react-native';
 import { useAppDispatch } from '@hooks/useAppDispatch';
 import { useAppSelector } from '@hooks/useAppSelector';
 import { updateTaskStatus } from '../store/slices/taskSlice';
 import { updateLeaveStatus } from '../store/slices/leaveSlice';
-import { Employee, Leave, Task } from '../types';
 import { colors } from '../styles/globalStylesUpdated';
 import { useToast } from '../hooks/useToast';
 import { useAnimatedValue } from '../hooks/useAnimatedValue';
@@ -18,46 +24,50 @@ interface SectionProps {
   onAction?: () => void;
 }
 
-const Section = React.memo(({ 
-  title, 
-  data, 
-  renderContent, 
-  actionText, 
-  onAction 
-}: SectionProps) => {
-  const opacity = useAnimatedValue(0);
+const Section = React.memo(
+  ({ title, data, renderContent, actionText, onAction }: SectionProps) => {
+    const opacity = useAnimatedValue(0);
 
-  return (
-    <Animated.View style={[styles.section, { opacity }]}>
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>{title}</Text>
-        {actionText && onAction && (
-          <TouchableOpacity style={styles.actionButton} onPress={onAction}>
-            <Ionicons name="add-circle-outline" size={24} color={colors.white} />
-            <Text style={styles.buttonText}>{actionText}</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-      {data.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Ionicons name="information-circle-outline" size={40} color={colors.border} />
-          <Text style={styles.emptyText}>Aucune donnée</Text>
+    return (
+      <Animated.View style={[styles.section, { opacity }]}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>{title}</Text>
+          {actionText && onAction && (
+            <TouchableOpacity style={styles.actionButton} onPress={onAction}>
+              <Ionicons
+                name="add-circle-outline"
+                size={24}
+                color={colors.white}
+              />
+              <Text style={styles.buttonText}>{actionText}</Text>
+            </TouchableOpacity>
+          )}
         </View>
-      ) : (
-        renderContent(data)
-      )}
-    </Animated.View>
-  );
-});
+        {data.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Ionicons
+              name="information-circle-outline"
+              size={40}
+              color={colors.border}
+            />
+            <Text style={styles.emptyText}>Aucune donnée</Text>
+          </View>
+        ) : (
+          renderContent(data)
+        )}
+      </Animated.View>
+    );
+  },
+);
 
 const ITEMS_PER_PAGE = 5;
 
 const DashboardScreen: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { user, role } = useAppSelector(state => state.auth);
-  const { tasks } = useAppSelector(state => state.task);
-  const { leaves } = useAppSelector(state => state.leave);
-  const { employees } = useAppSelector(state => state.employee);
+  const { user } = useAppSelector((state) => state.auth);
+  const { tasks } = useAppSelector((state) => state.task);
+  const { leaves } = useAppSelector((state) => state.leave);
+  const { employees } = useAppSelector((state) => state.employee);
   const titleOpacity = useAnimatedValue(0, { duration: 1000 });
   const toast = useToast();
 
@@ -70,14 +80,31 @@ const DashboardScreen: React.FC = () => {
   const paginatedEmployees = employees.slice(0, employeePage * ITEMS_PER_PAGE);
 
   const handleTaskComplete = async (taskId: string) => {
-    await dispatch(updateTaskStatus({ taskId, status: 'completed' }));
+    if (!user?.id) return;
+    await dispatch(
+      updateTaskStatus({
+        taskId,
+        status: 'completed',
+        employeeId: user.id,
+      }),
+    );
   };
 
-  const handleLeaveAction = async (leaveId: string, status: 'approved' | 'rejected') => {
-    if (role !== 'admin' && role !== 'manager') {
+  const handleLeaveAction = async (
+    leaveId: string,
+    status: 'approved' | 'rejected',
+  ) => {
+    if (!user?.id) return;
+    if (user.role !== 'admin' && user.role !== 'manager') {
       return;
     }
-    await dispatch(updateLeaveStatus({ leaveId, status }));
+    await dispatch(
+      updateLeaveStatus({
+        leaveId,
+        status,
+        employeeId: user.id,
+      }),
+    );
   };
 
   return (
@@ -88,10 +115,10 @@ const DashboardScreen: React.FC = () => {
 
       <Section
         title="Tâches en Cours"
-        data={paginatedTasks.filter(task => task.status !== 'completed')}
+        data={paginatedTasks.filter((task) => task.status !== 'completed')}
         renderContent={(data) => (
           <View>
-            {data.map(task => (
+            {data.map((task) => (
               <View key={task.id} style={styles.item}>
                 <View style={styles.itemInfo}>
                   <Text style={styles.itemText}>{task.title}</Text>
@@ -100,17 +127,24 @@ const DashboardScreen: React.FC = () => {
                   </Text>
                 </View>
                 <TouchableOpacity
-                  style={[styles.actionButtonSmall, { backgroundColor: colors.success }]}
+                  style={[
+                    styles.actionButtonSmall,
+                    { backgroundColor: colors.success },
+                  ]}
                   onPress={() => handleTaskComplete(task.id)}
                 >
-                  <Ionicons name="checkmark-outline" size={20} color={colors.white} />
+                  <Ionicons
+                    name="checkmark-outline"
+                    size={20}
+                    color={colors.white}
+                  />
                 </TouchableOpacity>
               </View>
             ))}
             {tasks.length > taskPage * ITEMS_PER_PAGE && (
               <TouchableOpacity
                 style={styles.loadMoreButton}
-                onPress={() => setTaskPage(prev => prev + 1)}
+                onPress={() => setTaskPage((prev) => prev + 1)}
               >
                 <Text style={styles.loadMoreText}>Charger plus de tâches</Text>
               </TouchableOpacity>
@@ -119,30 +153,46 @@ const DashboardScreen: React.FC = () => {
         )}
       />
 
-      {(role === 'admin' || role === 'manager') && (
+      {(user?.role === 'admin' || user?.role === 'manager') && (
         <Section
           title="Demandes de Congés"
-          data={paginatedLeaves.filter(leave => leave.status === 'pending')}
+          data={paginatedLeaves.filter((leave) => leave.status === 'pending')}
           renderContent={(data) => (
             <View>
-              {data.map(leave => (
+              {data.map((leave) => (
                 <View key={leave.id} style={styles.item}>
                   <View style={styles.itemInfo}>
                     <Text style={styles.itemText}>{leave.employeeName}</Text>
-                    <Text style={styles.itemSubText}>{`${leave.startDate} - ${leave.endDate}`}</Text>
+                    <Text
+                      style={styles.itemSubText}
+                    >{`${leave.startDate} - ${leave.endDate}`}</Text>
                   </View>
                   <View style={styles.actionRow}>
                     <TouchableOpacity
-                      style={[styles.actionButtonSmall, { backgroundColor: colors.success }]}
+                      style={[
+                        styles.actionButtonSmall,
+                        { backgroundColor: colors.success },
+                      ]}
                       onPress={() => handleLeaveAction(leave.id, 'approved')}
                     >
-                      <Ionicons name="checkmark-outline" size={20} color={colors.white} />
+                      <Ionicons
+                        name="checkmark-outline"
+                        size={20}
+                        color={colors.white}
+                      />
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={[styles.actionButtonSmall, { backgroundColor: colors.error }]}
+                      style={[
+                        styles.actionButtonSmall,
+                        { backgroundColor: colors.error },
+                      ]}
                       onPress={() => handleLeaveAction(leave.id, 'rejected')}
                     >
-                      <Ionicons name="close-outline" size={20} color={colors.white} />
+                      <Ionicons
+                        name="close-outline"
+                        size={20}
+                        color={colors.white}
+                      />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -150,9 +200,11 @@ const DashboardScreen: React.FC = () => {
               {leaves.length > leavePage * ITEMS_PER_PAGE && (
                 <TouchableOpacity
                   style={styles.loadMoreButton}
-                  onPress={() => setLeavePage(prev => prev + 1)}
+                  onPress={() => setLeavePage((prev) => prev + 1)}
                 >
-                  <Text style={styles.loadMoreText}>Charger plus de congés</Text>
+                  <Text style={styles.loadMoreText}>
+                    Charger plus de congés
+                  </Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -165,7 +217,7 @@ const DashboardScreen: React.FC = () => {
         data={paginatedEmployees}
         renderContent={(data) => (
           <View>
-            {data.map(employee => (
+            {data.map((employee) => (
               <View key={employee.id} style={styles.item}>
                 <View style={styles.itemInfo}>
                   <Text style={styles.itemText}>
@@ -179,7 +231,7 @@ const DashboardScreen: React.FC = () => {
             {employees.length > employeePage * ITEMS_PER_PAGE && (
               <TouchableOpacity
                 style={styles.loadMoreButton}
-                onPress={() => setEmployeePage(prev => prev + 1)}
+                onPress={() => setEmployeePage((prev) => prev + 1)}
               >
                 <Text style={styles.loadMoreText}>Charger plus d'employés</Text>
               </TouchableOpacity>
@@ -188,21 +240,27 @@ const DashboardScreen: React.FC = () => {
         )}
       />
 
-      {(role === 'admin' || role === 'manager') && (
+      {(user?.role === 'admin' || user?.role === 'manager') && (
         <Section
           title="Rapports"
           data={[]}
           renderContent={(data) => (
             <View style={styles.reportButtons}>
-              <TouchableOpacity 
-                style={[styles.reportButton, { backgroundColor: colors.primary }]}
+              <TouchableOpacity
+                style={[
+                  styles.reportButton,
+                  { backgroundColor: colors.primary },
+                ]}
                 onPress={() => toast.info('Génération du rapport en cours...')}
               >
                 <Ionicons name="stats-chart" size={24} color={colors.white} />
                 <Text style={styles.buttonText}>Rapport de Présence</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.reportButton, { backgroundColor: colors.secondary }]}
+              <TouchableOpacity
+                style={[
+                  styles.reportButton,
+                  { backgroundColor: colors.secondary },
+                ]}
                 onPress={() => toast.info('Génération du rapport en cours...')}
               >
                 <Ionicons name="people" size={24} color={colors.white} />

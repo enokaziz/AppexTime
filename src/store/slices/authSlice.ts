@@ -1,10 +1,10 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { auth } from '../../config/firebase';
-import { 
+import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
 } from 'firebase/auth';
 import { UserRole } from '../../types/Permissions';
 
@@ -14,6 +14,7 @@ interface AuthState {
     email: string;
     role: UserRole;
     managedEmployees?: string[];
+    companyId: string;
   } | null;
   token: string | null;
   loading: boolean;
@@ -30,46 +31,55 @@ const initialState: AuthState = {
 export const loginUser = createAsyncThunk(
   'auth/login',
   async ({ email, password }: { email: string; password: string }) => {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const userCredential = await signInWithEmailAndPassword(
+      auth,
+      email,
+      password,
+    );
     return userCredential.user;
-  }
+  },
 );
 
 export const registerUser = createAsyncThunk(
   'auth/register',
   async ({ email, password }: { email: string; password: string }) => {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password,
+    );
     return userCredential.user;
-  }
+  },
 );
 
-export const logoutUser = createAsyncThunk(
-  'auth/logout',
-  async () => {
-    await signOut(auth);
-  }
-);
+export const logoutUser = createAsyncThunk('auth/logout', async () => {
+  await signOut(auth);
+});
 
 export const resetPassword = createAsyncThunk(
   'auth/resetPassword',
   async (email: string) => {
     await sendPasswordResetEmail(auth, email);
-  }
+  },
 );
 
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    setCredentials: (state, action: PayloadAction<{
-      user: {
-        id: string;
-        email: string;
-        role: UserRole;
-        managedEmployees?: string[];
-      };
-      token: string | null;
-    }>) => {
+    setCredentials: (
+      state,
+      action: PayloadAction<{
+        user: {
+          id: string;
+          email: string;
+          role: UserRole;
+          managedEmployees?: string[];
+          companyId: string;
+        };
+        token: string | null;
+      }>,
+    ) => {
       state.user = action.payload.user;
       state.token = action.payload.token;
     },
@@ -95,7 +105,8 @@ const authSlice = createSlice({
             id: action.payload.uid,
             email: action.payload.email,
             role: 'employee', // Par défaut, on attribue le rôle d'employé
-            managedEmployees: []
+            managedEmployees: [],
+            companyId: '',
           };
         }
       })
@@ -115,7 +126,8 @@ const authSlice = createSlice({
             id: action.payload.uid,
             email: action.payload.email,
             role: 'employee', // Par défaut, on attribue le rôle d'employé
-            managedEmployees: []
+            managedEmployees: [],
+            companyId: '',
           };
         }
       })
@@ -129,10 +141,12 @@ const authSlice = createSlice({
       })
       // Reset Password
       .addCase(resetPassword.rejected, (state, action) => {
-        state.error = action.error.message || 'Erreur de réinitialisation du mot de passe';
+        state.error =
+          action.error.message || 'Erreur de réinitialisation du mot de passe';
       });
   },
 });
 
-export const { setCredentials, clearCredentials, clearError } = authSlice.actions;
+export const { setCredentials, clearCredentials, clearError } =
+  authSlice.actions;
 export default authSlice.reducer;

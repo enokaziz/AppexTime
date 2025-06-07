@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode } from 'react';
 
 export interface Employee {
   id: string;
@@ -40,6 +40,7 @@ export interface Task {
   employeeId: string;
   status: TaskStatus;
   dueDate: string;
+  completed: boolean;
 }
 
 export type TaskStatus = 'pending' | 'in_progress' | 'completed';
@@ -104,6 +105,47 @@ export interface Badge {
     firstName: string;
     phoneNumber: string;
     photo: string;
+  };
+  design?: BadgeDesign;
+  format: BadgeFormat;
+  status: BadgeStatus;
+}
+
+export interface BadgeDesign {
+  backgroundColor: string;
+  textColor: string;
+  borderColor: string;
+  borderWidth: number;
+  borderRadius: number;
+  logo?: string;
+  fontFamily?: string;
+  fontSize?: number;
+}
+
+export type BadgeFormat = 'PDF' | 'PNG' | 'SVG' | 'JPG';
+
+export type BadgeStatus = 'draft' | 'generated' | 'printed' | 'error';
+
+export interface QRCodeOptions {
+  size: number;
+  color: string;
+  backgroundColor: string;
+  logo?: string;
+  logoSize?: number;
+  errorCorrectionLevel: 'L' | 'M' | 'Q' | 'H';
+  quietZone?: number;
+  quietZoneColor?: string;
+}
+
+export interface ScanHistory {
+  id: string;
+  employeeId: string;
+  timestamp: string;
+  status: 'success' | 'error';
+  errorMessage?: string;
+  location?: {
+    latitude: number;
+    longitude: number;
   };
 }
 
