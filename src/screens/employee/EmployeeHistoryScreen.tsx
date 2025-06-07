@@ -56,9 +56,16 @@ const EmployeeHistoryScreen = () => {
 
   const renderItem = ({ item }: { item: EmployeeHistory }) => (
     <View style={styles.item}>
-      <Text style={styles.label}>Date: <Text style={styles.value}>{item.date}</Text></Text>
-      <Text style={styles.label}>Action: <Text style={styles.value}>{item.action}</Text></Text>
-      <Text style={styles.label}>Lieu: <Text style={styles.value}>{item.location}</Text></Text>
+      <Text style={styles.label}>Date : <Text style={styles.value}>{item.date}</Text></Text>
+      <Text style={styles.label}>Statut : <Text style={styles.value}>{item.status || '-'}</Text></Text>
+      <Text style={styles.label}>Check-in : <Text style={styles.value}>{item.checkInTime ? new Date(item.checkInTime.seconds * 1000).toLocaleTimeString() : '-'}</Text></Text>
+      <Text style={styles.label}>Check-out : <Text style={styles.value}>{item.checkOutTime ? new Date(item.checkOutTime.seconds * 1000).toLocaleTimeString() : '-'}</Text></Text>
+      {item.justification ? (
+        <Text style={styles.label}>Justification : <Text style={styles.value}>{item.justification}</Text></Text>
+      ) : null}
+      {item.location && (
+        <Text style={styles.label}>Lieu : <Text style={styles.value}>{item.location}</Text></Text>
+      )}
     </View>
   );
 

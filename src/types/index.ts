@@ -17,6 +17,10 @@ export interface EmployeeHistory {
   date: string;
   action: 'check-in' | 'check-out';
   location: string;
+  status?: string;
+  checkInTime?: { seconds: number; nanoseconds: number };
+  checkOutTime?: { seconds: number; nanoseconds: number };
+  justification?: string;
 }
 
 export interface Leave {

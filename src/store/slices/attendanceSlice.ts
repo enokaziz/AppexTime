@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { db } from '../../config/firebase';
-import { 
+import {
   collection,
   addDoc,
   getDocs,
@@ -8,7 +8,7 @@ import {
   where,
   Timestamp,
   updateDoc,
-  doc
+  doc,
 } from 'firebase/firestore';
 
 interface AttendanceRecord {
@@ -23,6 +23,7 @@ interface AttendanceRecord {
   };
   status: 'present' | 'late' | 'absent' | 'overtime';
   verificationMethod: 'qr' | 'facial';
+  justification?: string; // Ajout du champ justification
 }
 
 interface AttendanceState {
@@ -41,24 +42,56 @@ const initialState: AttendanceState = {
 
 export const checkIn = createAsyncThunk(
   'attendance/checkIn',
-  async ({ 
-    employeeId, 
-    companyId, 
-    location,
-    verificationMethod 
-  }: { 
-    employeeId: string;
-    companyId: string;
-    location?: { latitude: number; longitude: number };
-    verificationMethod: 'qr' | 'facial';
-  }) => {
+  async (
+    {
+      employeeId,
+      companyId,
+      location,
+      verificationMethod,
+      justification,
+    }: {
+      employeeId: string;
+      companyId: string;
+      location?: { latitude: number; longitude: number };
+      verificationMethod: 'qr' | 'facial';
+      justification?: string;
+    },
+    { rejectWithValue },
+  ) => {
     try {
-      const checkInTime = Timestamp.now();
-      
-      // Determine if the check-in is late based on company policy
-      // This should be implemented based on your business logic
-      const status: 'present' | 'late' | 'absent' | 'overtime' = 'present'; // Type explicite ajouté
+      // Vérifier s'il y a déjà un check-in sans check-out pour aujourd'hui
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+      const q = query(
+        collection(db, 'attendance'),
+        where('employeeId', '==', employeeId),
+        where('companyId', '==', companyId),
+        where('checkInTime', '>=', Timestamp.fromDate(today)),
+        where('checkInTime', '<', Timestamp.fromDate(tomorrow)),
+      );
+      const snapshot = await getDocs(q);
+      const openRecord = snapshot.docs.find((doc) => !doc.data().checkOutTime);
+      if (openRecord) {
+        return rejectWithValue(
+          'Vous avez déjà pointé sans avoir fait de check-out.',
+        );
+      }
 
+      const checkInTime = Timestamp.now();
+      // Heure limite de check-in (08:00)
+      const limitHour = 8;
+      const checkInDate = checkInTime.toDate();
+      let status: 'present' | 'late' | 'absent' | 'overtime' = 'present';
+      let justificationValue = justification;
+      if (
+        checkInDate.getHours() > limitHour ||
+        (checkInDate.getHours() === limitHour && checkInDate.getMinutes() > 0)
+      ) {
+        status = 'late';
+      }
+      // Si l'utilisateur souhaite justifier son retard, il peut passer justification
       const attendanceData = {
         employeeId,
         companyId,
@@ -66,60 +99,77 @@ export const checkIn = createAsyncThunk(
         location,
         status,
         verificationMethod,
+        justification: justificationValue || undefined,
       };
-
       const docRef = await addDoc(collection(db, 'attendance'), attendanceData);
-      
       return {
         id: docRef.id,
         ...attendanceData,
       };
     } catch (error: any) {
-      throw new Error(error.message);
+      return rejectWithValue(error.message);
     }
-  }
+  },
 );
 
 export const checkOut = createAsyncThunk(
   'attendance/checkOut',
-  async ({ 
-    recordId,
-    location 
-  }: { 
-    recordId: string;
-    location?: { latitude: number; longitude: number };
-  }) => {
+  async (
+    {
+      employeeId,
+      companyId,
+      location,
+    }: {
+      employeeId: string;
+      companyId: string;
+      location?: { latitude: number; longitude: number };
+    },
+    { rejectWithValue },
+  ) => {
     try {
+      // Vérifier qu'il existe un check-in sans check-out pour aujourd'hui
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+      const q = query(
+        collection(db, 'attendance'),
+        where('employeeId', '==', employeeId),
+        where('companyId', '==', companyId),
+        where('checkInTime', '>=', Timestamp.fromDate(today)),
+        where('checkInTime', '<', Timestamp.fromDate(tomorrow)),
+      );
+      const snapshot = await getDocs(q);
+      const openRecord = snapshot.docs.find((doc) => !doc.data().checkOutTime);
+      if (!openRecord) {
+        return rejectWithValue("Aucun check-in trouvé pour aujourd'hui.");
+      }
+      const recordId = openRecord.id;
       const checkOutTime = Timestamp.now();
       const attendanceRef = doc(db, 'attendance', recordId);
-      
-      // Calculate overtime status if applicable
-      // This should be implemented based on your business logic
-      
       await updateDoc(attendanceRef, {
         checkOutTime,
         location,
       });
-
       return {
         recordId,
         checkOutTime,
         location,
       };
     } catch (error: any) {
-      throw new Error(error.message);
+      return rejectWithValue(error.message);
     }
-  }
+  },
 );
 
 export const fetchAttendanceRecords = createAsyncThunk(
   'attendance/fetchRecords',
-  async ({ 
+  async ({
     companyId,
     employeeId,
     startDate,
-    endDate 
-  }: { 
+    endDate,
+  }: {
     companyId: string;
     employeeId?: string;
     startDate?: Date;
@@ -128,7 +178,7 @@ export const fetchAttendanceRecords = createAsyncThunk(
     try {
       let q = query(
         collection(db, 'attendance'),
-        where('companyId', '==', companyId)
+        where('companyId', '==', companyId),
       );
 
       if (employeeId) {
@@ -144,14 +194,14 @@ export const fetchAttendanceRecords = createAsyncThunk(
       }
 
       const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => ({
+      return querySnapshot.docs.map((doc) => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       })) as AttendanceRecord[];
     } catch (error: any) {
       throw new Error(error.message);
     }
-  }
+  },
 );
 
 const attendanceSlice = createSlice({
@@ -179,7 +229,8 @@ const attendanceSlice = createSlice({
       })
       .addCase(checkIn.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || 'Erreur lors du pointage d\'entrée';
+        state.error =
+          action.error.message || "Erreur lors du pointage d'entrée";
       })
       // Check Out
       .addCase(checkOut.pending, (state) => {
@@ -188,7 +239,9 @@ const attendanceSlice = createSlice({
       })
       .addCase(checkOut.fulfilled, (state, action) => {
         state.loading = false;
-        const index = state.records.findIndex(record => record.id === action.payload.recordId);
+        const index = state.records.findIndex(
+          (record) => record.id === action.payload.recordId,
+        );
         if (index !== -1) {
           state.records[index] = {
             ...state.records[index],
@@ -200,7 +253,8 @@ const attendanceSlice = createSlice({
       })
       .addCase(checkOut.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || 'Erreur lors du pointage de sortie';
+        state.error =
+          action.error.message || 'Erreur lors du pointage de sortie';
       })
       // Fetch Records
       .addCase(fetchAttendanceRecords.pending, (state) => {
@@ -213,7 +267,9 @@ const attendanceSlice = createSlice({
       })
       .addCase(fetchAttendanceRecords.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || 'Erreur lors de la récupération des pointages';
+        state.error =
+          action.error.message ||
+          'Erreur lors de la récupération des pointages';
       });
   },
 });

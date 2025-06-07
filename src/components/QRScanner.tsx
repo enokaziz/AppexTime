@@ -62,12 +62,35 @@ const QRScanner: React.FC = () => {
       // Obtenir la position actuelle
       const location = await Location.getCurrentPositionAsync({});
 
+      // Si l'utilisateur est en retard, demander une justification
+      let justification = '';
+      const now = new Date();
+      if (now.getHours() > 8 || (now.getHours() === 8 && now.getMinutes() > 0)) {
+        // Afficher un prompt natif pour justification
+        await new Promise<void>((resolve) => {
+          Alert.prompt(
+            'Retard détecté',
+            'Veuillez saisir une justification pour le retard (optionnel)',
+            [
+              {
+                text: 'Valider',
+                onPress: (text) => {
+                  justification = text ?? '';
+                  resolve();
+                },
+              },
+            ],
+            'plain-text',
+          );
+        });
+      }
       // Enregistrer le pointage
       await dispatch(
         checkIn({
           employeeId: badgeData.employeeId,
           companyId: customUser.companyId,
           verificationMethod: 'qr',
+          justification: justification || '',
         }),
       ).unwrap();
 
