@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { BarCodeScanner, BarCodeScannerResult } from 'expo-barcode-scanner';
 import { checkIn } from '../store/slices/attendanceSlice';
+import { useAppSelector } from '../store/hooks';
 import { useAuth } from '../contexts/AuthContext';
 import { CustomUser } from '../types/auth';
 import { useAppDispatch } from '../hooks/useAppDispatch';
@@ -27,7 +28,7 @@ const QRScanner: React.FC = () => {
   const [isFlashOn, setIsFlashOn] = React.useState(false);
   const [scanHistory, setScanHistory] = React.useState<ScanHistory[]>([]);
   const dispatch = useAppDispatch();
-  const { user } = useAuth();
+  const { user } = useAppSelector((state) => state.auth);
 
   React.useEffect(() => {
     (async () => {

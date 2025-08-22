@@ -135,3 +135,68 @@ Pense à ajouter un champ “engines” pour spécifier les versions de node et 
 Ajoute un champ “description” et “repository” pour faciliter la maintenance et l’onboarding.
 Dépendances inutiles ou redondantes
 geolocation : cette dépendance semble obsolète, préfère expo-location ou react-native-geolocation-service
+
+
+
+
+Liste des principaux dashboards/écrans
+Dashboards
+
+dashboard/AdminDashboardScreen.tsx
+dashboard/DashboardScreen.tsx
+dashboard/ManagerDashboardScreen.tsx
+Écrans de gestion
+
+employee/EmployeeListScreen.tsx
+employee/EmployeeHistoryScreen.tsx
+employee/EmployeePerformanceScreen.tsx
+employee/EmployeePortalScreen.tsx
+leave-management/AbsenceManagementScreen.tsx
+leave-management/LeaveManagementScreen.tsx
+time-management/AttendanceScreen.tsx
+time-management/OvertimeManagementScreen.tsx
+time-management/ScheduleManagementScreen.tsx
+BenefitsManagementScreen.tsx
+CompanySettingsScreen.tsx
+SupportScreen.tsx
+TeamPerformanceScreen.tsx
+etc.
+2. Critères pour un design professionnel
+Palette de couleurs cohérente (couleurs principales, secondaires, fonds, alertes)
+Typographie claire et hiérarchisée (titres, sous-titres, textes, boutons)
+Espacement et alignement réguliers
+Composants réutilisables (cards, tableaux, boutons, inputs, avatars…)
+Icônes modernes (ex : Material Icons, Feather, FontAwesome)
+Feedback utilisateur (loaders, messages d’erreur/succès, transitions)
+Responsive et adaptatif (mobile/tablette/desktop)
+Navigation fluide et intuitive
+Données bien hiérarchisées (tableaux, graphiques, badges de statut)
+Dark mode (optionnel mais apprécié)
+3. Suggestions générales pour tous tes dashboards
+A. Header & Navigation
+Ajouter un header fixe avec le titre de l’écran, le logo, et un menu utilisateur (avatar, logout, paramètres).
+Utiliser une navigation latérale ou un bottom tab bar pour accéder rapidement aux sections principales.
+B. Cartes d’information (Cards)
+Présenter les KPIs/infos clés dans des cards colorées avec icône, valeur et libellé (ex : nombre d’employés présents, absents, en retard…).
+Utiliser des ombres douces et des coins arrondis pour un effet moderne.
+C. Tableaux et listes
+Utiliser des DataTables avec tri, filtres et pagination pour les listes longues.
+Afficher les statuts sous forme de badges colorés (ex : “Présent”, “Absent”, “En retard”).
+Ajouter des actions rapides (éditer, supprimer, voir détails) sous forme d’icônes à droite de chaque ligne.
+D. Graphiques et visualisations
+Ajouter des graphiques (barres, camemberts, courbes) pour visualiser les présences, retards, absences, performances, etc.
+Utiliser des librairies comme react-native-chart-kit, victory-native ou recharts (pour web).
+E. Formulaires et modals
+Utiliser des inputs stylisés avec labels flottants, validation en temps réel, et messages d’aide.
+Préférer les modals pour la saisie rapide (ajout/modif) plutôt que de naviguer vers un nouvel écran.
+F. Feedback utilisateur
+Afficher des loaders animés pendant les chargements.
+Utiliser des toasts/snackbars pour les confirmations ou erreurs.
+G. Responsive & Accessibilité
+Tester l’affichage sur plusieurs tailles d’écran.
+Contraster suffisamment les couleurs et prévoir des tailles de texte lisibles.
+4. Suggestions spécifiques (prochaines étapes)
+Pour aller plus loin :
+
+Envoie-moi le code d’un ou plusieurs dashboards (ex : AdminDashboardScreen, DashboardScreen, ManagerDashboardScreen) pour une analyse détaillée et des suggestions personnalisées (UI, UX, structure, code, etc.).
+Je peux aussi te proposer des maquettes (Figma-like) ou du code de composants stylisés pour chaque écran.

@@ -518,7 +518,7 @@ const AdminDashboardScreen: React.FC = () => {
               </View>
             </View>
           </View>
-        )}
+        )} 
         actionText="Ajouter"
         onAction={() =>
           dispatch(
@@ -531,6 +531,7 @@ const AdminDashboardScreen: React.FC = () => {
               employeeId: '',
               status: 'pending',
               dueDate: new Date().toISOString().split('T')[0],
+              completed: false
             }),
           )
         }

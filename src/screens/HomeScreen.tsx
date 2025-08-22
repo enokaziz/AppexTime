@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@contexts/AuthContext';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { logoutUser } from '../store/slices/authSlice';
 import {
   View,
   Text,
@@ -16,7 +17,8 @@ import useTasks from '@hooks/useTasks';
 import { useNavigation } from '@react-navigation/native';
 import { AuthScreenNavigationProp } from '../navigation/types';
 import Toast from 'react-native-toast-message';
-import { colors } from '../styles/globalStylesUpdated';
+import { theme } from '../styles/theme';
+import { formatFirebaseDate } from '../utils/dateUtils';
 
 type AllowedScreens =
   | 'Dashboard'
@@ -26,38 +28,90 @@ type AllowedScreens =
   | 'TaskManagement'
   | 'SubmitLeave';
 
-// Composant de carte réutilisable
+// Composant de carte réutilisable avec animations améliorées
 const AnimatedCard: React.FC<{
   children: React.ReactNode;
   translateY: Animated.Value;
-}> = ({ children, translateY }) => (
-  <Animated.View style={[styles.card, { transform: [{ translateY }] }]}>
-    {children}
-  </Animated.View>
-);
+  delay?: number;
+}> = ({ children, translateY, delay = 0 }) => {
+  const scaleAnim = React.useRef(new Animated.Value(0.95)).current;
+  const opacityAnim = React.useRef(new Animated.Value(0)).current;
 
-// Composant de résumé
+  React.useEffect(() => {
+    Animated.sequence([
+      Animated.delay(delay),
+      Animated.parallel([
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  }, []);
+
+  return (
+    <Animated.View
+      style={[
+        styles.card,
+        {
+          transform: [{ translateY }, { scale: scaleAnim }],
+          opacity: opacityAnim,
+        },
+      ]}
+    >
+      {children}
+    </Animated.View>
+  );
+};
+
+// Composant de résumé avec design amélioré
 const SummaryCard: React.FC<{
   tasks: any[];
   leaves: any[];
   employees: any[];
   translateY: Animated.Value;
 }> = ({ tasks, leaves, employees, translateY }) => (
-  <AnimatedCard translateY={translateY}>
-    <Text style={styles.cardTitle}>Résumé</Text>
+  <AnimatedCard translateY={translateY} delay={200}>
+    <Text style={styles.cardTitle}>📊 Résumé de l'Équipe</Text>
     <View style={styles.summaryContainer}>
       <View style={styles.summaryItem}>
-        <Ionicons name="checkmark-circle" size={24} color={colors.primary} />
+        <View style={styles.iconContainer}>
+          <Ionicons
+            name="checkmark-circle"
+            size={28}
+            color={theme.colors.white}
+          />
+        </View>
         <Text style={styles.summaryValue}>{tasks.length}</Text>
         <Text style={styles.summaryLabel}>Tâches</Text>
       </View>
       <View style={styles.summaryItem}>
-        <Ionicons name="calendar" size={24} color={colors.primary} />
+        <View
+          style={[
+            styles.iconContainer,
+            { backgroundColor: theme.colors.accent },
+          ]}
+        >
+          <Ionicons name="calendar" size={28} color={theme.colors.white} />
+        </View>
         <Text style={styles.summaryValue}>{leaves.length}</Text>
         <Text style={styles.summaryLabel}>Congés</Text>
       </View>
       <View style={styles.summaryItem}>
-        <Ionicons name="people" size={24} color={colors.primary} />
+        <View
+          style={[
+            styles.iconContainer,
+            { backgroundColor: theme.colors.primaryLight },
+          ]}
+        >
+          <Ionicons name="people" size={28} color={theme.colors.white} />
+        </View>
         <Text style={styles.summaryValue}>{employees.length}</Text>
         <Text style={styles.summaryLabel}>Employés</Text>
       </View>
@@ -65,101 +119,165 @@ const SummaryCard: React.FC<{
   </AnimatedCard>
 );
 
-// Composant de notifications
+// Composant de notifications avec design amélioré
 const NotificationsCard: React.FC<{
   leaves: any[];
   translateY: Animated.Value;
 }> = ({ leaves, translateY }) => (
-  <AnimatedCard translateY={translateY}>
+  <AnimatedCard translateY={translateY} delay={400}>
     <View style={styles.cardHeader}>
-      <Text style={styles.cardTitle}>Notifications</Text>
-      <TouchableOpacity>
-        <Text style={styles.seeAllButton}>Voir tout</Text>
+      <Text style={styles.cardTitle}>🔔 Notifications Récentes</Text>
+      <TouchableOpacity style={styles.seeAllButton}>
+        <Text style={styles.seeAllButtonText}>Voir tout</Text>
+        <Ionicons
+          name="chevron-forward"
+          size={16}
+          color={theme.colors.primary}
+        />
       </TouchableOpacity>
     </View>
     <View style={styles.notificationsContainer}>
-      {leaves.slice(0, 5).map((item) => (
-        <View key={item.id} style={styles.notificationItem}>
+      {leaves.slice(0, 5).map((item, index) => (
+        <Animated.View
+          key={item.id}
+          style={[
+            styles.notificationItem,
+            {
+              transform: [
+                {
+                  translateX: new Animated.Value(-50).interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, 1],
+                  }),
+                },
+              ],
+            },
+          ]}
+        >
+          <View style={styles.notificationIcon}>
+            <Ionicons
+              name="time-outline"
+              size={20}
+              color={theme.colors.primary}
+            />
+          </View>
           <View style={styles.notificationContent}>
             <Text style={styles.notificationName}>
               {item.employeeName || 'Inconnu'}
             </Text>
             <Text style={styles.notificationDate}>
-              {item.startDate} - {item.endDate}
+              {formatFirebaseDate(item.startDate)} -{' '}
+              {formatFirebaseDate(item.endDate)}
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.primary} />
-        </View>
+          <Ionicons
+            name="chevron-forward"
+            size={20}
+            color={theme.colors.primary}
+          />
+        </Animated.View>
       ))}
       {leaves.length === 0 && (
         <View style={styles.emptyContainer}>
-          <Ionicons name="notifications-off" size={40} color={colors.border} />
+          <Ionicons
+            name="notifications-off"
+            size={48}
+            color={theme.colors.border}
+          />
           <Text style={styles.emptyText}>Aucune notification</Text>
+          <Text style={styles.emptySubText}>Tout est à jour !</Text>
         </View>
       )}
     </View>
   </AnimatedCard>
 );
 
-// Composant de liens rapides
+// Composant de liens rapides avec design amélioré
 const QuickLinksCard: React.FC<{
   role: string | null;
   handleNavigation: (screen: AllowedScreens) => void;
   translateY: Animated.Value;
 }> = ({ role, handleNavigation, translateY }) => (
-  <AnimatedCard translateY={translateY}>
-    <Text style={styles.cardTitle}>Liens Rapides</Text>
+  <AnimatedCard translateY={translateY} delay={600}>
+    <Text style={styles.cardTitle}>⚡ Accès Rapides</Text>
     <View style={styles.linksContainer}>
       {(role === 'admin' || role === 'manager') && (
         <>
           {role === 'admin' && (
             <TouchableOpacity
-              style={styles.linkButton}
+              style={[
+                styles.linkButton,
+                { backgroundColor: theme.colors.primary },
+              ]}
               onPress={() => handleNavigation('AdminDashboard')}
               accessibilityLabel="Accéder au tableau de bord administrateur"
             >
-              <Ionicons name="analytics" size={24} color={colors.white} />
+              <View style={styles.linkIconContainer}>
+                <Ionicons
+                  name="analytics"
+                  size={24}
+                  color={theme.colors.white}
+                />
+              </View>
               <Text style={styles.linkText}>Tableau Admin</Text>
             </TouchableOpacity>
           )}
           {role === 'manager' && (
             <TouchableOpacity
-              style={styles.linkButton}
+              style={[
+                styles.linkButton,
+                { backgroundColor: theme.colors.accent },
+              ]}
               onPress={() => handleNavigation('ManagerDashboard')}
               accessibilityLabel="Accéder au tableau de bord manager"
             >
-              <Ionicons name="bar-chart" size={24} color={colors.white} />
+              <View style={styles.linkIconContainer}>
+                <Ionicons
+                  name="bar-chart"
+                  size={24}
+                  color={theme.colors.white}
+                />
+              </View>
               <Text style={styles.linkText}>Tableau Manager</Text>
             </TouchableOpacity>
           )}
           <TouchableOpacity
-            style={styles.linkButton}
+            style={[
+              styles.linkButton,
+              { backgroundColor: theme.colors.primaryLight },
+            ]}
             onPress={() => handleNavigation('EmployeeList')}
             accessibilityLabel="Gérer les employés"
           >
-            <Ionicons name="people" size={24} color={colors.white} />
+            <View style={styles.linkIconContainer}>
+              <Ionicons name="people" size={24} color={theme.colors.white} />
+            </View>
             <Text style={styles.linkText}>Gérer Employés</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.linkButton}
+            style={[styles.linkButton, { backgroundColor: theme.colors.info }]}
             onPress={() => handleNavigation('TaskManagement')}
             accessibilityLabel="Gérer les tâches"
           >
-            <Ionicons name="list" size={24} color={colors.white} />
+            <View style={styles.linkIconContainer}>
+              <Ionicons name="list" size={24} color={theme.colors.white} />
+            </View>
             <Text style={styles.linkText}>Gérer Tâches</Text>
           </TouchableOpacity>
         </>
       )}
       <TouchableOpacity
-        style={styles.linkButton}
+        style={[styles.linkButton, { backgroundColor: theme.colors.success }]}
         onPress={() => handleNavigation('Dashboard')}
         accessibilityLabel="Accéder au tableau de bord"
       >
-        <Ionicons name="grid" size={24} color={colors.white} />
+        <View style={styles.linkIconContainer}>
+          <Ionicons name="grid" size={24} color={theme.colors.white} />
+        </View>
         <Text style={styles.linkText}>Tableau de Bord</Text>
       </TouchableOpacity>
       <TouchableOpacity
-        style={styles.linkButton}
+        style={[styles.linkButton, { backgroundColor: theme.colors.warning }]}
         onPress={() => {
           handleNavigation('SubmitLeave');
           Toast.show({
@@ -170,7 +288,9 @@ const QuickLinksCard: React.FC<{
         }}
         accessibilityLabel="Demander un congé"
       >
-        <Ionicons name="calendar" size={24} color={colors.white} />
+        <View style={styles.linkIconContainer}>
+          <Ionicons name="calendar" size={24} color={theme.colors.white} />
+        </View>
         <Text style={styles.linkText}>Demander Congé</Text>
       </TouchableOpacity>
     </View>
@@ -178,7 +298,9 @@ const QuickLinksCard: React.FC<{
 );
 
 const HomeScreen = () => {
-  const { user, role, logout } = useAuth();
+  const dispatch = useAppDispatch();
+  const { user } = useAppSelector((state) => state.auth);
+  const role = user?.role || null;
   const { employees } = useEmployee();
   const { leaves } = useLeave();
   const { tasks } = useTasks();
@@ -186,6 +308,13 @@ const HomeScreen = () => {
   const [isLoading, setIsLoading] = useState(true);
   const headerOpacity = React.useRef(new Animated.Value(0)).current;
   const cardTranslateY = React.useRef(new Animated.Value(50)).current;
+
+  // Logs de débogage pour le rôle
+  useEffect(() => {
+    console.log('🔍 HomeScreen - Utilisateur actuel:', user);
+    console.log('🎭 HomeScreen - Rôle détecté:', role);
+    console.log('📧 HomeScreen - Email:', user?.email);
+  }, [user, role]);
 
   useEffect(() => {
     const animation = Animated.parallel([
@@ -211,7 +340,7 @@ const HomeScreen = () => {
 
   const handleLogout = async () => {
     try {
-      await logout();
+      await dispatch(logoutUser()).unwrap();
       Toast.show({
         type: 'success',
         text1: 'Déconnexion réussie',
@@ -249,7 +378,8 @@ const HomeScreen = () => {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+        <Text style={styles.loadingText}>Chargement...</Text>
       </View>
     );
   }
@@ -259,17 +389,31 @@ const HomeScreen = () => {
       <Animated.View style={[styles.header, { opacity: headerOpacity }]}>
         <View style={styles.headerContent}>
           <View>
-            <Text style={styles.title}>Bienvenue, {userName}</Text>
+            <Text style={styles.title}>👋 Bienvenue, {userName}</Text>
             <Text style={styles.subtitle}>
-              Voici un aperçu de vos activités
+              Voici un aperçu de vos activités aujourd'hui
             </Text>
+            {role && (
+              <Text style={styles.roleText}>
+                Rôle:{' '}
+                {role === 'admin'
+                  ? '👑 Administrateur'
+                  : role === 'manager'
+                  ? '📊 Manager'
+                  : '👤 Employé'}
+              </Text>
+            )}
           </View>
           <TouchableOpacity
             onPress={handleLogout}
             style={styles.logoutButton}
             accessibilityLabel="Se déconnecter"
           >
-            <Ionicons name="log-out-outline" size={24} color={colors.error} />
+            <Ionicons
+              name="log-out-outline"
+              size={24}
+              color={theme.colors.error}
+            />
           </TouchableOpacity>
         </View>
       </Animated.View>
@@ -299,7 +443,7 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.colors.background,
   },
   scrollView: {
     flex: 1,
@@ -308,19 +452,21 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: theme.colors.background,
+  },
+  loadingText: {
+    marginTop: theme.spacing.md,
+    fontSize: 16,
+    color: theme.colors.text,
   },
   header: {
-    paddingHorizontal: 20,
+    paddingHorizontal: theme.spacing.lg,
     paddingTop: 40,
-    paddingBottom: 20,
-    backgroundColor: colors.white,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    paddingBottom: theme.spacing.lg,
+    backgroundColor: theme.colors.white,
+    borderBottomLeftRadius: theme.borderRadius.xl,
+    borderBottomRightRadius: theme.borderRadius.xl,
+    ...theme.shadows.medium,
   },
   headerContent: {
     flexDirection: 'row',
@@ -328,76 +474,107 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 28,
+    fontSize: 20,
     fontWeight: '700',
-    color: colors.textDark,
+    color: theme.colors.textDark,
     letterSpacing: 0.5,
   },
   subtitle: {
     fontSize: 16,
-    color: colors.text,
-    marginTop: 5,
+    color: theme.colors.text,
+    marginTop: theme.spacing.xs,
+  },
+  roleText: {
+    fontSize: 14,
+    color: theme.colors.primary,
+    marginTop: theme.spacing.xs,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   logoutButton: {
-    padding: 8,
+    padding: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.backgroundLight,
   },
   card: {
-    backgroundColor: colors.white,
-    borderRadius: 16,
-    padding: 10,
-    margin: 10,
-    marginBottom: 10,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    backgroundColor: theme.colors.white,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.lg,
+    margin: theme.spacing.md,
+    marginBottom: theme.spacing.md,
+    ...theme.shadows.medium,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: theme.spacing.md,
   },
   cardTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: colors.primary,
+    color: theme.colors.textDark,
   },
   seeAllButton: {
-    color: colors.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: theme.spacing.sm,
+  },
+  seeAllButtonText: {
+    color: theme.colors.primary,
     fontSize: 14,
+    fontWeight: '500',
+    marginRight: theme.spacing.xs,
   },
   summaryContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 10,
+    marginTop: theme.spacing.md,
   },
   summaryItem: {
     alignItems: 'center',
-    backgroundColor: colors.background,
-    borderRadius: 12,
-    padding: 15,
-    width: '30%',
+    backgroundColor: theme.colors.backgroundLight,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
+    width: '33%',
+    ...theme.shadows.small,
+  },
+  iconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 28,
+    backgroundColor: theme.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: theme.spacing.sm,
   },
   summaryLabel: {
     fontSize: 12,
-    color: colors.text,
-    marginTop: 5,
+    color: theme.colors.text,
+    marginTop: theme.spacing.xs,
+    fontWeight: '500',
   },
   summaryValue: {
     fontSize: 24,
     fontWeight: '700',
-    color: colors.textDark,
-    marginTop: 8,
+    color: theme.colors.textDark,
+    marginTop: theme.spacing.xs,
   },
   notificationItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: theme.spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.background,
+    borderBottomColor: theme.colors.borderLight,
+  },
+  notificationIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.colors.backgroundLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: theme.spacing.md,
   },
   notificationContent: {
     flex: 1,
@@ -405,50 +582,58 @@ const styles = StyleSheet.create({
   notificationName: {
     fontSize: 16,
     fontWeight: '500',
-    color: colors.textDark,
+    color: theme.colors.textDark,
   },
   notificationDate: {
     fontSize: 14,
-    color: colors.text,
-    marginTop: 4,
+    color: theme.colors.text,
+    marginTop: theme.spacing.xs,
   },
   emptyContainer: {
     alignItems: 'center',
-    padding: 20,
+    padding: theme.spacing.lg,
   },
   emptyText: {
     fontSize: 16,
-    color: colors.text,
-    marginTop: 10,
+    color: theme.colors.text,
+    marginTop: theme.spacing.md,
+    fontWeight: '500',
+  },
+  emptySubText: {
+    fontSize: 14,
+    color: theme.colors.textLight,
+    marginTop: theme.spacing.xs,
   },
   linksContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginTop: 10,
+    marginTop: theme.spacing.md,
   },
   linkButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-    padding: 15,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
     width: '48%',
-    marginBottom: 15,
+    marginBottom: theme.spacing.md,
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
+    ...theme.shadows.small,
+  },
+  linkIconContainer: {
+    marginRight: theme.spacing.sm,
   },
   linkText: {
-    color: colors.white,
+    color: theme.colors.white,
     fontSize: 16,
     fontWeight: '500',
-    marginLeft: 8,
   },
   scrollContent: {
-    padding: 20,
+    padding: theme.spacing.lg,
     paddingTop: 0,
   },
   notificationsContainer: {
-    marginTop: 10,
+    marginTop: theme.spacing.md,
   },
 });
 

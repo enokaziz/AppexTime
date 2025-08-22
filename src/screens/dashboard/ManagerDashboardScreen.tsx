@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '@contexts/AuthContext';
 import {
   View,
   Text,
@@ -16,10 +15,12 @@ import {
   logNotification,
   onLeaveStatusChange,
 } from '@utils/notificationHelper';
-import { Employee, Leave, Task, TaskStatus } from '../types/index';
+import { Employee, Leave, Task, TaskStatus } from '../../types/index';
+import { useAppSelector } from '../../store/hooks';
 
 const ManagerDashboardScreen: React.FC = () => {
-  const { user, role } = useAuth();
+  const { user } = useAppSelector((state) => state.auth);
+  const role = user?.role;
   const {
     employees,
     handleAddEmployee,

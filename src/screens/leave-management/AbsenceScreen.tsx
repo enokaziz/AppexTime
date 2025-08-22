@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, Button, FlatList, RefreshControl } from 'react-native';
 import { NavigationProp } from '@react-navigation/native';
-import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { fetchAbsences } from '../store/slices/absenceSlice';
-import { absenceStyles } from '../styles/absenceStyles';
-import EmptyState from '../components/EmptyState';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { fetchAbsences } from '../../store/slices/absenceSlice';
+import { absenceStyles } from '../../styles/absenceStyles';
+import EmptyState from '../../components/EmptyState';
 
 interface Props {
   navigation: NavigationProp<any>;

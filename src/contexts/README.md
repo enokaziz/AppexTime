@@ -1,10 +1,11 @@
 # Contextes React
 
-Ce dossier contient les contextes React utilisés pour partager des états globaux dans l’application ApexTime (authentification, thème, tâches, support, etc.).
+Ce dossier contient les contextes React utilisés pour partager des états spécifiques à un domaine dans l’application ApexTime.
+
+Suite à la refactorisation, la **gestion de l'état global** (comme l'authentification) est maintenant gérée par **Redux**. Les contextes restants sont utilisés pour des états qui ne nécessitent pas Redux, comme la gestion du thème ou des données très localisées.
 
 ## Fichiers
 
-- **AuthContext.tsx** : Contexte pour la gestion de l’authentification.
 - **BenefitsContext.tsx** : Contexte pour la gestion des avantages employés.
 - **EmployeeContext.tsx** : Contexte pour la gestion des employés.
 - **HistoryContext.tsx** : Contexte pour l’historique des actions/utilisateurs.
@@ -14,21 +15,9 @@ Ce dossier contient les contextes React utilisés pour partager des états globa
 - **TaskContext.tsx** : Contexte pour la gestion des tâches.
 - **ThemeContext.tsx** : Contexte pour la gestion du thème (clair/sombre).
 
-## Exemple d’utilisation
-```tsx
-import { useContext } from 'react';
-import { AuthContext } from './AuthContext';
-const { user } = useContext(AuthContext);
-```
-
-## Créer un nouveau contexte
-1. Créer un fichier `MonContexte.tsx`.
-2. Utiliser `createContext` et `useContext` de React.
-3. Documenter le contexte dans ce README.
-
 ## Bonnes pratiques
 - Garder les contextes simples et spécifiques à un domaine.
-- Éviter de stocker des états volumineux ou rarement modifiés.
+- Éviter de stocker des états volumineux ou qui changent fréquemment (préférer Redux pour cela).
 - Toujours typer les valeurs du contexte.
 
 ## Auteurs

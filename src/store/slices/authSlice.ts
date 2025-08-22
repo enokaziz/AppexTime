@@ -1,11 +1,12 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { auth } from '../../config/firebase';
+import { auth, db } from '../../config/firebase';
 import {
-  signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
   sendPasswordResetEmail,
 } from 'firebase/auth';
+import { getDoc, doc } from 'firebase/firestore';
+import * as authService from '../../services/auth';
 import { UserRole } from '../../types/Permissions';
 
 interface AuthState {
@@ -30,25 +31,59 @@ const initialState: AuthState = {
 
 export const loginUser = createAsyncThunk(
   'auth/login',
-  async ({ email, password }: { email: string; password: string }) => {
-    const userCredential = await signInWithEmailAndPassword(
-      auth,
+  async (
+    { email, password }: { email: string; password: string },
+    { rejectWithValue },
+  ) => {
+    const { success, error, userData } = await authService.login(
       email,
       password,
     );
-    return userCredential.user;
+    if (!success) {
+      return rejectWithValue(error);
+    }
+
+    console.log('🚀 loginUser thunk - Données utilisateur reçues:', userData);
+    return userData;
   },
 );
 
 export const registerUser = createAsyncThunk(
   'auth/register',
-  async ({ email, password }: { email: string; password: string }) => {
-    const userCredential = await createUserWithEmailAndPassword(
-      auth,
+  async (
+    {
       email,
       password,
+      role,
+    }: { email: string; password: string; role: string },
+    { rejectWithValue },
+  ) => {
+    const { success, error } = await authService.register(
+      email,
+      password,
+      role,
     );
-    return userCredential.user;
+    if (!success) {
+      return rejectWithValue(error);
+    }
+
+    // Récupérer l'utilisateur créé avec ses données complètes
+    const user = auth.currentUser;
+    if (user) {
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        return {
+          uid: user.uid,
+          email: user.email,
+          role: userData.role,
+          createdAt: userData.createdAt,
+          status: userData.status,
+        };
+      }
+    }
+
+    return user;
   },
 );
 
@@ -58,8 +93,12 @@ export const logoutUser = createAsyncThunk('auth/logout', async () => {
 
 export const resetPassword = createAsyncThunk(
   'auth/resetPassword',
-  async (email: string) => {
-    await sendPasswordResetEmail(auth, email);
+  async (email: string, { rejectWithValue }) => {
+    const { success, error } = await authService.resetPassword(email);
+    if (!success) {
+      return rejectWithValue(error);
+    }
+    return true;
   },
 );
 
@@ -100,14 +139,23 @@ const authSlice = createSlice({
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.loading = false;
+        state.error = null;
+
+        console.log('✅ loginUser fulfilled - Payload reçu:', action.payload);
+
         if (action.payload && action.payload.uid && action.payload.email) {
           state.user = {
             id: action.payload.uid,
             email: action.payload.email,
-            role: 'employee', // Par défaut, on attribue le rôle d'employé
+            role: action.payload.role || 'employee', // ✅ Utilise le vrai rôle !
             managedEmployees: [],
             companyId: '',
           };
+
+          console.log(
+            '🎯 Utilisateur connecté avec rôle:',
+            action.payload.role,
+          );
         }
       })
       .addCase(loginUser.rejected, (state, action) => {
@@ -121,19 +169,27 @@ const authSlice = createSlice({
       })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.loading = false;
+        state.error = null;
+        console.log('✅ registerUser fulfilled, payload:', action.payload);
+
         if (action.payload && action.payload.uid && action.payload.email) {
           state.user = {
             id: action.payload.uid,
             email: action.payload.email,
-            role: 'employee', // Par défaut, on attribue le rôle d'employé
+            role: action.payload.role || 'employee', // ✅ Utilise le vrai rôle !
             managedEmployees: [],
             companyId: '',
           };
+
+          console.log('🎯 Utilisateur inscrit avec rôle:', action.payload.role);
         }
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || 'Une erreur est survenue';
+        console.log('❌ registerUser rejected, error:', action.error);
+        state.error =
+          action.error.message ||
+          "Une erreur est survenue lors de l'inscription";
       })
       // Logout
       .addCase(logoutUser.fulfilled, (state) => {

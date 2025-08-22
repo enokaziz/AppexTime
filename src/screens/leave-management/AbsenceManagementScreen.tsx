@@ -9,10 +9,10 @@ import {
   TouchableOpacity,
   TextInput,
 } from 'react-native';
-import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { addAbsence, removeAbsence } from '../store/slices/absenceSlice';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { addAbsence, removeAbsence } from '../../store/slices/absenceSlice';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { absenceStyles } from '../styles/absenceStyles';
+import { absenceStyles } from '../../styles/absenceStyles';
 
 interface Absence {
   id: string;

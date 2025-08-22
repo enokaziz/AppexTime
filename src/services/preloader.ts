@@ -22,6 +22,10 @@ const PRELOAD_RESOURCES = {
 // Fonction pour précharger les données utilisateur essentielles
 export const preloadUserData = async (userId: string) => {
   try {
+    if (!userId) {
+      // Pas d'utilisateur authentifié, on ignore le préchargement
+      return true;
+    }
     // Préchargement parallèle des données critiques
     const promises = [
       // Utilisation de getEmployee au lieu de getEmployeeDetails
@@ -32,12 +36,10 @@ export const preloadUserData = async (userId: string) => {
         ),
       // Utilisation de fetchTasks au lieu de getAssignedTasks
       // et filtrage des tâches de l'utilisateur
-      taskService
-        .fetchTasks()
-        .then((tasks: any[]) => {
-          const userTasks = tasks.filter((task) => task.assignedTo === userId);
-          return cacheService.setItem('tasks', userTasks, { priority: 'HIGH' });
-        }),
+      taskService.fetchTasks().then((tasks: any[]) => {
+        const userTasks = tasks.filter((task) => task.assignedTo === userId);
+        return cacheService.setItem('tasks', userTasks, { priority: 'HIGH' });
+      }),
     ];
 
     await Promise.all(promises);
@@ -56,9 +58,10 @@ export const preloadTeamData = async (teamId: string) => {
   try {
     // Récupération de tous les employés et filtrage par équipe
     const allEmployees = await employeeService.getEmployees();
-    const teamMembers = allEmployees.filter(employee => 
-      // Supposons que l'employé a une propriété teamId
-      (employee as any).teamId === teamId
+    const teamMembers = allEmployees.filter(
+      (employee) =>
+        // Supposons que l'employé a une propriété teamId
+        (employee as any).teamId === teamId,
     );
     await cacheService.setItem('team', teamMembers, { priority: 'MEDIUM' });
 
@@ -70,7 +73,7 @@ export const preloadTeamData = async (teamId: string) => {
       teamId: teamId,
       present: teamMembers.length,
       absent: 0,
-      late: 0
+      late: 0,
     };
     await cacheService.setItem('recentAttendance', mockAttendance, {
       priority: 'MEDIUM',
@@ -88,9 +91,11 @@ export const preloadPendingLeaves = async (managerId: string) => {
   try {
     // Récupération de tous les congés et filtrage des congés en attente
     const allLeaves = await leaveService.getLeaves();
-    const pendingLeaves = allLeaves.filter(leave => 
-      // Supposons que le congé a un statut et est lié à un manager
-      (leave as any).status === 'pending' && (leave as any).managerId === managerId
+    const pendingLeaves = allLeaves.filter(
+      (leave) =>
+        // Supposons que le congé a un statut et est lié à un manager
+        (leave as any).status === 'pending' &&
+        (leave as any).managerId === managerId,
     );
     await cacheService.setItem('pendingLeaves', pendingLeaves, {
       priority: 'MEDIUM',
@@ -111,6 +116,10 @@ export const usePreloader = (userId: string, role: string) => {
 
   useEffect(() => {
     const loadInitialData = async () => {
+      if (!userId) {
+        // On attend que l'utilisateur soit disponible
+        return;
+      }
       // Préchargement des données utilisateur pour tous les rôles
       await preloadUserData(userId);
 
@@ -145,8 +154,8 @@ export const preloadScreenData = async (screenName: string, params: any) => {
     case 'LeaveManagement':
       // Utilisation de getLeaves et filtrage par utilisateur
       const allLeaves = await leaveService.getLeaves();
-      const leaveHistory = allLeaves.filter(leave => 
-        (leave as any).employeeId === params.userId
+      const leaveHistory = allLeaves.filter(
+        (leave) => (leave as any).employeeId === params.userId,
       );
       await cacheService.setItem(
         `leaveHistory_${params.userId}`,

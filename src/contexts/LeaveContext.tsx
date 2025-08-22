@@ -1,5 +1,13 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from 'react';
 import Toast from 'react-native-toast-message';
+import * as leaveService from '../services/leave';
+import { useAppSelector } from '../store/hooks';
 
 interface Leave {
   employeeName: ReactNode;
@@ -18,53 +26,60 @@ interface LeaveContextType {
   rejectLeave: (id: string) => void;
 }
 
-export const LeaveContext = createContext<LeaveContextType | undefined>(undefined);
+export const LeaveContext = createContext<LeaveContextType | undefined>(
+  undefined,
+);
 
-export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [leaves, setLeaves] = useState<Leave[]>([]);
+  const { user } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
     const fetchLeaves = async () => {
       try {
-        const response = await fetch('/api/leaves');
-        const data = await response.json();
-        setLeaves(data);
+        if (!user) return;
+        const data = await leaveService.getLeaves();
+        setLeaves(data as unknown as Leave[]);
         Toast.show({
           type: 'success',
           text1: 'Succès',
-          text2: 'Congé ajouté avec succès !',
+          text2: 'Congés récupérés avec succès !',
         });
       } catch (error) {
         console.error('Error fetching leaves:', error);
         Toast.show({
           type: 'error',
           text1: 'Erreur',
-          text2: "Erreur lors de l'ajout du congé.",
+          text2: 'Erreur lors du chargement des congés.',
         });
       }
     };
 
     fetchLeaves();
-  }, []);
+  }, [user]);
 
   const approveLeave = (id: string) => {
     setLeaves((prevLeaves) =>
-      prevLeaves.map(leave =>
-        leave.id === id ? { ...leave, status: 'approved' } : leave
-      )
+      prevLeaves.map((leave) =>
+        leave.id === id ? { ...leave, status: 'approved' } : leave,
+      ),
     );
   };
 
   const rejectLeave = (id: string) => {
     setLeaves((prevLeaves) =>
-      prevLeaves.map(leave =>
-        leave.id === id ? { ...leave, status: 'rejected' } : leave
-      )
+      prevLeaves.map((leave) =>
+        leave.id === id ? { ...leave, status: 'rejected' } : leave,
+      ),
     );
   };
 
   return (
-    <LeaveContext.Provider value={{ leaves, setLeaves, approveLeave, rejectLeave }}>
+    <LeaveContext.Provider
+      value={{ leaves, setLeaves, approveLeave, rejectLeave }}
+    >
       {children}
     </LeaveContext.Provider>
   );

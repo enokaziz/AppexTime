@@ -1,5 +1,13 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from 'react';
 import Toast from 'react-native-toast-message';
+import * as taskService from '../services/task';
+import { useAppSelector } from '../store/hooks';
 
 interface Task {
   assignedTo: ReactNode;
@@ -18,34 +26,39 @@ interface TaskContextType {
   completeTask: (id: string) => void;
 }
 
-export const TaskContext = createContext<TaskContextType | undefined>(undefined);
+export const TaskContext = createContext<TaskContextType | undefined>(
+  undefined,
+);
 
-export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const { user } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
     const fetchTasks = async () => {
       try {
-        const response = await fetch('/api/tasks');
-        const data = await response.json();
-        setTasks(data);
+        if (!user) return;
+        const data = await taskService.fetchTasks();
+        setTasks(data as unknown as Task[]);
         Toast.show({
           type: 'success',
           text1: 'Succès',
-          text2: 'Tâche ajoutée avec succès !',
+          text2: 'Tâches récupérées avec succès !',
         });
       } catch (error) {
         console.error('Error fetching tasks:', error);
         Toast.show({
           type: 'error',
           text1: 'Erreur',
-          text2: "Erreur lors de l'ajout de la tâche.",
+          text2: 'Erreur lors du chargement des tâches.',
         });
       }
     };
 
     fetchTasks();
-  }, []);
+  }, [user]);
 
   const assignTask = (task: Task) => {
     setTasks((prevTasks) => [...prevTasks, task]);
@@ -54,8 +67,8 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const completeTask = (id: string) => {
     setTasks((prevTasks) =>
       prevTasks.map((task) =>
-        task.id === id ? { ...task, completed: true } : task
-      )
+        task.id === id ? { ...task, completed: true } : task,
+      ),
     );
   };
 

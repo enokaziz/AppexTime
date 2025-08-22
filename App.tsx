@@ -1,9 +1,7 @@
-// app.tsx
 import React, { createRef, lazy, Suspense, useEffect } from 'react';
 import { Provider } from 'react-redux';
 import store from './src/store/store';
-import { AuthProvider } from './src/contexts/AuthContext';
-import { useAuth } from './src/contexts/AuthContext';
+import { useAppSelector } from './src/store/hooks';
 import { LeaveProvider } from './src/contexts/LeaveContext';
 import { TaskProvider } from './src/contexts/TaskContext';
 import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
@@ -21,19 +19,12 @@ import * as cacheService from './src/services/cache';
 const AppNavigator = lazy(() => import('./src/navigation/AppNavigator'));
 const AuthNavigator = lazy(() => import('./src/navigation/AuthNavigator'));
 
-// Type pour l'utilisateur avec les propriétés nécessaires
-interface ExtendedUser {
-  id: string;
-  role: string;
-}
-
 export const navigationRef = createRef<NavigationContainerRef<ParamListBase>>();
 
 const Navigation = () => {
-  const { isLoading, user } = useAuth();
-  const extendedUser = user as unknown as ExtendedUser | null;
+  const { isLoading, user } = useAppSelector((state) => state.auth);
   // Appel conditionnel du hook mais avec des valeurs par défaut pour maintenir l'ordre
-  usePreloader(extendedUser?.id || '', extendedUser?.role || '');
+  usePreloader(user?.id || '', user?.role || '');
 
   // Effet pour initialiser le cache
   useEffect(() => {
@@ -48,7 +39,7 @@ const Navigation = () => {
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#0066cc" />
         <Text style={styles.loadingText}>Chargement de l'application...</Text>
-    </View>
+      </View>
     );
   }
 
@@ -71,14 +62,12 @@ const Navigation = () => {
 export default function App() {
   return (
     <Provider store={store}>
-      <AuthProvider>
-        <LeaveProvider>
-          <TaskProvider>
-            <Navigation />
-            <Toast />
-          </TaskProvider>
-        </LeaveProvider>
-      </AuthProvider>
+      <LeaveProvider>
+        <TaskProvider>
+          <Navigation />
+          <Toast />
+        </TaskProvider>
+      </LeaveProvider>
     </Provider>
   );
 }

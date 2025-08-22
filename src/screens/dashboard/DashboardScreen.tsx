@@ -9,11 +9,11 @@ import {
 } from 'react-native';
 import { useAppDispatch } from '@hooks/useAppDispatch';
 import { useAppSelector } from '@hooks/useAppSelector';
-import { updateTaskStatus } from '../store/slices/taskSlice';
-import { updateLeaveStatus } from '../store/slices/leaveSlice';
-import { colors } from '../styles/globalStylesUpdated';
-import { useToast } from '../hooks/useToast';
-import { useAnimatedValue } from '../hooks/useAnimatedValue';
+import { updateTaskStatus } from '../../store/slices/taskSlice';
+import { updateLeaveStatus } from '../../store/slices/leaveSlice';
+import { theme } from '../../styles/theme';
+import { useToast } from '../../hooks/useToast';
+import { useAnimatedValue } from '../../hooks/useAnimatedValue';
 import { Ionicons } from '@expo/vector-icons';
 
 interface SectionProps {
@@ -37,7 +37,7 @@ const Section = React.memo(
               <Ionicons
                 name="add-circle-outline"
                 size={24}
-                color={colors.white}
+                color={theme.colors.white}
               />
               <Text style={styles.buttonText}>{actionText}</Text>
             </TouchableOpacity>
@@ -47,10 +47,13 @@ const Section = React.memo(
           <View style={styles.emptyContainer}>
             <Ionicons
               name="information-circle-outline"
-              size={40}
-              color={colors.border}
+              size={48}
+              color={theme.colors.border}
             />
-            <Text style={styles.emptyText}>Aucune donnée</Text>
+            <Text style={styles.emptyText}>Aucune donnée disponible</Text>
+            <Text style={styles.emptySubText}>
+              Les données apparaîtront ici
+            </Text>
           </View>
         ) : (
           renderContent(data)
@@ -110,11 +113,11 @@ const DashboardScreen: React.FC = () => {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <Animated.Text style={[styles.title, { opacity: titleOpacity }]}>
-        Tableau de Bord
+        📊 Tableau de Bord
       </Animated.Text>
 
       <Section
-        title="Tâches en Cours"
+        title="✅ Tâches en Cours"
         data={paginatedTasks.filter((task) => task.status !== 'completed')}
         renderContent={(data) => (
           <View>
@@ -129,14 +132,14 @@ const DashboardScreen: React.FC = () => {
                 <TouchableOpacity
                   style={[
                     styles.actionButtonSmall,
-                    { backgroundColor: colors.success },
+                    { backgroundColor: theme.colors.success },
                   ]}
                   onPress={() => handleTaskComplete(task.id)}
                 >
                   <Ionicons
                     name="checkmark-outline"
                     size={20}
-                    color={colors.white}
+                    color={theme.colors.white}
                   />
                 </TouchableOpacity>
               </View>
@@ -155,7 +158,7 @@ const DashboardScreen: React.FC = () => {
 
       {(user?.role === 'admin' || user?.role === 'manager') && (
         <Section
-          title="Demandes de Congés"
+          title="📅 Demandes de Congés"
           data={paginatedLeaves.filter((leave) => leave.status === 'pending')}
           renderContent={(data) => (
             <View>
@@ -171,27 +174,27 @@ const DashboardScreen: React.FC = () => {
                     <TouchableOpacity
                       style={[
                         styles.actionButtonSmall,
-                        { backgroundColor: colors.success },
+                        { backgroundColor: theme.colors.success },
                       ]}
                       onPress={() => handleLeaveAction(leave.id, 'approved')}
                     >
                       <Ionicons
                         name="checkmark-outline"
                         size={20}
-                        color={colors.white}
+                        color={theme.colors.white}
                       />
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[
                         styles.actionButtonSmall,
-                        { backgroundColor: colors.error },
+                        { backgroundColor: theme.colors.error },
                       ]}
                       onPress={() => handleLeaveAction(leave.id, 'rejected')}
                     >
                       <Ionicons
                         name="close-outline"
                         size={20}
-                        color={colors.white}
+                        color={theme.colors.white}
                       />
                     </TouchableOpacity>
                   </View>
@@ -213,7 +216,7 @@ const DashboardScreen: React.FC = () => {
       )}
 
       <Section
-        title="Équipe"
+        title="👥 Équipe"
         data={paginatedEmployees}
         renderContent={(data) => (
           <View>
@@ -242,28 +245,32 @@ const DashboardScreen: React.FC = () => {
 
       {(user?.role === 'admin' || user?.role === 'manager') && (
         <Section
-          title="Rapports"
+          title="📈 Rapports"
           data={[]}
           renderContent={(data) => (
             <View style={styles.reportButtons}>
               <TouchableOpacity
                 style={[
                   styles.reportButton,
-                  { backgroundColor: colors.primary },
+                  { backgroundColor: theme.colors.primary },
                 ]}
                 onPress={() => toast.info('Génération du rapport en cours...')}
               >
-                <Ionicons name="stats-chart" size={24} color={colors.white} />
+                <Ionicons
+                  name="stats-chart"
+                  size={24}
+                  color={theme.colors.white}
+                />
                 <Text style={styles.buttonText}>Rapport de Présence</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[
                   styles.reportButton,
-                  { backgroundColor: colors.secondary },
+                  { backgroundColor: theme.colors.accent },
                 ]}
                 onPress={() => toast.info('Génération du rapport en cours...')}
               >
-                <Ionicons name="people" size={24} color={colors.white} />
+                <Ionicons name="people" size={24} color={theme.colors.white} />
                 <Text style={styles.buttonText}>Rapport d'Équipe</Text>
               </TouchableOpacity>
             </View>
@@ -277,113 +284,130 @@ const DashboardScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.colors.background,
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    color: colors.text,
-    marginBottom: 20,
-    paddingHorizontal: 20,
+    color: theme.colors.textDark,
+    marginBottom: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.lg,
+    textAlign: 'center',
   },
   section: {
-    marginBottom: 30,
+    marginBottom: theme.spacing.xl,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
-    paddingHorizontal: 20,
+    marginBottom: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.colors.textDark,
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.primary,
-    padding: 10,
-    borderRadius: 5,
-  },
-  buttonText: {
-    color: colors.white,
-    marginLeft: 5,
+    backgroundColor: theme.colors.primary,
+    padding: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
+    ...theme.shadows.small,
   },
   emptyContainer: {
     alignItems: 'center',
-    padding: 20,
+    padding: theme.spacing.xl,
+    backgroundColor: theme.colors.white,
+    marginHorizontal: theme.spacing.lg,
+    borderRadius: theme.borderRadius.lg,
+    ...theme.shadows.small,
   },
   emptyText: {
-    color: colors.border,
-    marginTop: 10,
+    color: theme.colors.text,
+    marginTop: theme.spacing.md,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  emptySubText: {
+    color: theme.colors.textLight,
+    marginTop: theme.spacing.xs,
+    fontSize: 14,
   },
   item: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 15,
-    marginHorizontal: 20,
-    marginBottom: 10,
-    backgroundColor: colors.white,
-    borderRadius: 10,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    padding: theme.spacing.md,
+    marginHorizontal: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
+    backgroundColor: theme.colors.white,
+    borderRadius: theme.borderRadius.md,
+    ...theme.shadows.small,
   },
   itemInfo: {
     flex: 1,
   },
   itemText: {
     fontSize: 16,
-    color: colors.text,
+    color: theme.colors.textDark,
+    fontWeight: '500',
   },
   itemSubText: {
     fontSize: 14,
-    color: colors.textSecondary,
-    marginTop: 5,
+    color: theme.colors.textLight,
+    marginTop: theme.spacing.xs,
   },
   actionButtonSmall: {
-    padding: 10,
-    borderRadius: 5,
+    padding: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
     justifyContent: 'center',
     alignItems: 'center',
+    minWidth: 44,
+    minHeight: 44,
   },
   actionRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: theme.spacing.sm,
   },
   statusIndicator: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.success,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: theme.colors.success,
   },
   reportButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    gap: 10,
+    paddingHorizontal: theme.spacing.lg,
+    gap: theme.spacing.md,
   },
   reportButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 15,
-    borderRadius: 10,
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    ...theme.shadows.small,
   },
   loadMoreButton: {
-    padding: 10,
+    padding: theme.spacing.md,
     alignItems: 'center',
+    marginHorizontal: theme.spacing.lg,
   },
   loadMoreText: {
-    color: colors.primary,
+    color: theme.colors.primary,
     fontWeight: '500',
+    fontSize: 14,
+  },
+  buttonText: {
+    color: theme.colors.white,
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginLeft: theme.spacing.xs,
   },
 });
 

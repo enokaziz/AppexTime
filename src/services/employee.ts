@@ -1,11 +1,29 @@
 import { db } from '../config/firebase';
-import { addDoc, collection, getDoc, doc, updateDoc, query, where, getDocs, deleteDoc } from 'firebase/firestore';
+import {
+  addDoc,
+  collection,
+  getDoc,
+  doc,
+  updateDoc,
+  query,
+  where,
+  getDocs,
+  deleteDoc,
+} from 'firebase/firestore';
 import { Employee, EmployeeHistory } from '../types/index';
 import _ from 'lodash';
 
 export const addEmployee = _.memoize(async (employee: Employee) => {
   try {
-    const { name, firstName, phoneNumber, photo, companyInitials, qrCodeUrl, uniqueId } = employee;
+    const {
+      name,
+      firstName,
+      phoneNumber,
+      photo,
+      companyInitials,
+      qrCodeUrl,
+      uniqueId,
+    } = employee;
     await addDoc(collection(db, 'employees'), {
       name,
       firstName,
@@ -13,16 +31,21 @@ export const addEmployee = _.memoize(async (employee: Employee) => {
       photo,
       companyInitials,
       qrCodeUrl,
-      uniqueId
+      uniqueId,
     });
   } catch (error) {
     console.error('Error adding employee:', error);
   }
 });
 
-
-export const getEmployee = async (employeeId: string): Promise<Employee | null> => {
+export const getEmployee = async (
+  employeeId: string,
+): Promise<Employee | null> => {
   try {
+    if (!employeeId) {
+      console.warn('getEmployee called without a valid employeeId');
+      return null;
+    }
     const employeeRef = doc(db, 'employees', employeeId);
     const employeeDoc = await getDoc(employeeRef);
     if (employeeDoc.exists()) {
@@ -39,7 +62,9 @@ export const getEmployees = async (): Promise<Employee[]> => {
   try {
     const employeeRef = collection(db, 'employees');
     const querySnapshot = await getDocs(employeeRef);
-    return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Employee));
+    return querySnapshot.docs.map(
+      (doc) => ({ ...doc.data(), id: doc.id } as Employee),
+    );
   } catch (error) {
     console.error('Error fetching employees:', error);
     return [];
@@ -48,6 +73,10 @@ export const getEmployees = async (): Promise<Employee[]> => {
 
 export const updateEmployee = _.memoize(async (updatedEmployee: Employee) => {
   try {
+    if (!updatedEmployee?.id) {
+      console.warn('updateEmployee called without a valid employee id');
+      return;
+    }
     const employeeRef = doc(db, 'employees', updatedEmployee.id);
     await updateDoc(employeeRef, { ...updatedEmployee });
   } catch (error) {
@@ -57,6 +86,10 @@ export const updateEmployee = _.memoize(async (updatedEmployee: Employee) => {
 
 export const deleteEmployee = _.memoize(async (employeeId: string) => {
   try {
+    if (!employeeId) {
+      console.warn('deleteEmployee called without a valid employeeId');
+      return;
+    }
     const employeeRef = doc(db, 'employees', employeeId);
     await deleteDoc(employeeRef);
   } catch (error) {
@@ -64,11 +97,20 @@ export const deleteEmployee = _.memoize(async (employeeId: string) => {
   }
 });
 
-export const getEmployeeHistory = async (employeeId: string, p0: number): Promise<EmployeeHistory[]> => {
+export const getEmployeeHistory = async (
+  employeeId: string,
+  p0: number,
+): Promise<EmployeeHistory[]> => {
   try {
-    const historyQuery = query(collection(db, 'history'), where('employeeId', '==', employeeId));
+    const historyQuery = query(
+      collection(db, 'history'),
+      where('employeeId', '==', employeeId),
+    );
     const querySnapshot = await getDocs(historyQuery);
-    return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as EmployeeHistory[];
+    return querySnapshot.docs.map((doc) => ({
+      ...doc.data(),
+      id: doc.id,
+    })) as EmployeeHistory[];
   } catch (error) {
     console.error('Error fetching employee history:', error);
     return [];
